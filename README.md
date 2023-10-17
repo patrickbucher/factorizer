@@ -1,6 +1,6 @@
 # Factorizer
 
-**TODO: Add description**
+Experimenting with Elixir using Prime Numbers
 
 ## Installation
 
