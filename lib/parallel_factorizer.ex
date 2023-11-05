@@ -1,5 +1,5 @@
 defmodule ParallelFactorizer do
-  def factorize_parallel(numbers) do
+  def factorize(numbers) do
     # start one process per number
     pids_by_number =
       Enum.map(numbers, fn n ->
@@ -21,21 +21,10 @@ defmodule ParallelFactorizer do
     end)
 
     # collect messages
-    collect(Enum.map(numbers, fn n -> {n, []} end) |> Map.new(), %{})
-  end
-
-  defp collect(pending, acc) when map_size(pending) > 0 do
-    receive do
-      {number, factors} ->
-        if Map.has_key?(pending, number) do
-          collect(Map.drop(pending, [number]), Map.put(acc, number, factors))
-        else
-          collect(pending, acc)
-        end
-    end
-  end
-
-  defp collect(%{}, acc) do
-    acc
+    Enum.reduce(numbers, %{}, fn _, acc ->
+      receive do
+        {number, factors} -> Map.put(acc, number, factors)
+      end
+    end)
   end
 end
