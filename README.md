@@ -28,7 +28,7 @@ Factorize some numbers (~ 10 seconds):
 
 Factorize the same numbers _in parallel_ (~ 2.5 seconds):
 
-    > Stopwatch.timed(fn -> Factorizer.factorize_parallel(100_000..100_010) end)
+    > Stopwatch.timed(fn -> ParallelFactorizer.factorize(100_000..100_010) end)
     2.513614s
     %{
       100000 => [2, 2, 2, 2, 2, 5, 5, 5, 5, 5],
