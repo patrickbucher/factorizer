@@ -1,6 +1,6 @@
 defmodule PrimeFactors do
   def factorize(n) do
-    primes = PrimeSieve.up_to(div(n, 2))
+    primes = PrimeSieve.up_to(:math.sqrt(n))
     next(primes, n, [])
   end
 
@@ -8,12 +8,12 @@ defmodule PrimeFactors do
     Enum.reverse(acc)
   end
 
-  defp next([], n, []) do
-    [n]
+  defp next([], 1, acc) do
+    Enum.reverse(acc)
   end
 
-  defp next([], _, acc) do
-    Enum.reverse(acc)
+  defp next([], n, acc) do
+    Enum.reverse([n | acc])
   end
 
   defp next(factors, n, acc) do
