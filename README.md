@@ -64,8 +64,8 @@ Same again, but with one server process per scheduler (Round Robin):
 
 Same again, but implemented using a server process with a callback module:
 
-    > Stopwatch.timed(fn -> FactorizerClient.factorize(1_000_000_000..1_000_000_010) end)
-    1.158415s
+    iex(2)> Stopwatch.timed(fn -> FactorizerCallbackClient.factorize(1_000_000_000..1_000_000_010) end)
+    1.196734s
     %{
       1000000000 => [2, 2, 2, 2, 2, 2, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5],
       1000000001 => [7, 11, 13, 19, 52579],
