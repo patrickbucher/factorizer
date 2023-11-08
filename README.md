@@ -2,7 +2,43 @@
 
 Experimenting with Elixir Concurrency using Prime Numbers.
 
-## Example
+## Code
+
+- Common Modules
+    - `Stopwatch` (`lib/stopwatch.ex`): provides `timed/1` to measure the
+      execution time of a function.
+    - `PrimeSieve` (`lib/prime_sieve.ex`): implements the _Sieve of
+      Eratosthenes_ using a stream to return the `first/1` `n` prime numbers, or
+      the prime numbers `up_to/1` `n`.
+    - `PrimeFactors` (`lib/prime_factors.ex`): factorizes a number into their
+      prime components using `PrimeSieve`.
+- Basic Implementation
+    - `Factorizer` (`lib/factorizer.ex`): provides `factorize/1`, which applies
+      factorization using `PrimeFactors` to each element in the given list;
+      returns a map of numbers (key) and their prime factors (values).
+- Basic Parallel Implementation
+    - `ParallelFactorizer` (`lib/parallel_factorizer.ex`): spawns one process
+      per given number to factorize them in parallel.
+- Client/Server Parallel Implementation
+    - `FactorizerServer` (`lib/factorizer_server.ex`): provides a long-running
+      server process to factorize numbers.
+    - `FactorizerClient` (`lib/factorizer_client.ex`): spawns one server process
+      per available scheduler (i.e. CPU core), to which numbers to be factorized
+      are assigned using a round robin mechanism.
+- Generic Client/Server Parallel Implementation using a Callback Module
+    - `ServerProcess` (`lib/server_process.ex`): implements a generic, stateful
+      server process that accepts synchronuous (call) and asynchronuous (cast)
+      messages.
+    - `FactorizerCallback` (`lib/factorizer_callback.ex`): implements the
+      specific logic of the factorization to work with the generic
+      `ServerProcess`. Numbers to be factorized are submitted using a
+      synchronuous call and retrieved using a asynchronuous cast.
+    - `FactorizerCallbackClient` (`lib/factorizer_callback_client.ex`): spawns
+      one callback module (with a generic server process behind) to factorize
+      the given prime numbers without implementing any concurrency mechanisms on
+      its own.
+
+## Execution
 
 Start `iex` with the current mix project:
 
