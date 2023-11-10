@@ -4,6 +4,42 @@ subtitle: 'Using Prime Factorization'
 author: 'Patrick Bucher'
 ---
 
+The concurrency model used in Elixir (and Erlang), often referred to as the
+_Actor Model_, is quite similar to the model used in Go, which is called
+_Communicating Sequential Processes_. There are many things in common, indeed:
+
+- Both Elixir's (or Erlang's) _processes_ and Go's _goroutines_ are
+  light-weight. It's practical to have hundreds or even thousands of them, which
+  are mapped to operating system threads in a _n:m_ manner (n OS threads running
+  m processes/goroutines).
+- Both models facilitate message passing between concurrent units of executions
+  (processes/goroutines).
+- Both languages offer language constructs to deal with incoming messages:
+  `receive` in Elixir, `select/case` and the arrow operator `<-` in Go.
+
+However, there are a few important differences, which may make a programmer
+coming over from Go (or a language solely using a shared-memory and thread-based
+model like Java, for that matter) to Elixir struggle:
+
+- Elixir's `spawn/1` starts a new process and returns a process identifier
+  (PID), whereas Go's `go` creates a new goroutine and returns nothing.
+- Knowing a process' PID is sufficient to send it a message in Elixir, whereas
+  in Go channels known to both goroutines are required for communication between
+  them.
+- In Elixir, processes do not share memory, whereas Go offers facilities for
+  both concurrency styles—message passing and shared memory.
+- As a consequence, a goroutine can wait for for a message from a specific
+  channel (possibly only known to another specific goroutine), whereas in
+  Elixir, a process can just wait for any message coming from anywhere.
+- Implementing a message loop in Elixir requires (tail) recursion, whereas Go
+  uses (infinite) loops.
+- Being a dynamically typed language, incoming messages are matched against a
+  pattern in Elixir, whereas Go uses typed channels, which deliver messages of
+  the same type and shape.
+
+Having worked with Go's model, the author's goal is to become acquainted wich
+Elixir's model by solving the problem stated below.
+
 # Problem
 
 TODO: prime factorization, finding prime numbers (CPU-bound)
