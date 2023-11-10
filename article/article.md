@@ -21,16 +21,16 @@ However, there are a few important differences, which may make a programmer
 coming over from Go (or a language solely using a shared-memory and thread-based
 model like Java, for that matter) to Elixir struggle:
 
+- In Elixir, processes do not share memory, whereas Go offers facilities for
+  both concurrency styles—message passing and shared memory.
 - Elixir's `spawn/1` starts a new process and returns a process identifier
   (PID), whereas Go's `go` creates a new goroutine and returns nothing.
 - Knowing a process' PID is sufficient to send it a message in Elixir, whereas
   in Go channels known to both goroutines are required for communication between
   them.
-- In Elixir, processes do not share memory, whereas Go offers facilities for
-  both concurrency styles—message passing and shared memory.
-- As a consequence, a goroutine can wait for for a message from a specific
-  channel (possibly only known to another specific goroutine), whereas in
-  Elixir, a process can just wait for any message coming from anywhere.
+- As a consequence, a goroutine can wait for a message from a specific channel
+  (possibly only known to another specific goroutine), whereas in Elixir a
+  process can just wait for any message coming from any process.
 - Implementing a message loop in Elixir requires (tail) recursion, whereas Go
   uses (infinite) loops.
 - Being a dynamically typed language, incoming messages are matched against a
