@@ -1,6 +1,8 @@
 # Factorizer
 
-Experimenting with Elixir Concurrency using Prime Numbers.
+Experimenting with Elixir Concurrency using Prime Numbers. The
+[article](article/article.md) documents both the motivation and execution in
+detail.
 
 ## Code
 
