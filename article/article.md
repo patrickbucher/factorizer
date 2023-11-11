@@ -85,6 +85,11 @@ suited for a case study in CPU-bound concurrency.
 TODO: setup using mix, prime sieve (of Eratosthenes), factorization, stop watch,
 unit tests
 
+This project was created using Elixir's `mix` tool:
+
+    # TODO: check if this is correct
+    $ mix new factorizer
+
 # Basic Implementation
 
 TODO: Factorizer, without Concurrency, `factorizer.ex` is `Factorizer`, etc.
