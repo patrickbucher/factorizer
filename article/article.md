@@ -55,10 +55,18 @@ number itself, can be expressed as a product of 13. A few examples:
 
 The prime factors of a number $x$ can be found as follows:
 
-1. All the prime numbers $p$ in the range $2 \leq p \le \sqrt{x}$ have to be
-   found (by brute force or using an algorithm such as the [Sieve of
-   Eratosthenes](https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes)).
-2. TODO
+1. All the prime numbers $p$ in the range $2 \leq p \leq \sqrt{x}$ have to be
+   found, which can be achieved using brute force or an algorithm such as the
+   [Sieve of Eratosthenes](https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes).
+   (Only finding the prime numbers $\leq \sqrt{x}$ is a heuristic, because no
+   natural number results from the division of $x$ by a prime number $p >
+   \sqrt{x}$.)
+2. The sequence of prime numbers found, which must be ordered ascendingly, is
+   processed as follows:
+    1. The number $x$ is divided by the first prime number $p_i$.
+    2. If this division yields a natural number, $p_i$ is added to the sequence
+       of prime factors, and $x$ becomes the result of that division. This step
+       is repeated, until the division of $p_i$ yields a fraction.
 
 
 TODO: prime factorization, finding prime numbers (CPU-bound)
