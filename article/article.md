@@ -1,6 +1,6 @@
 ---
-title: 'Exploring Concurrency in Elixir'
-subtitle: 'Using Prime Factorization'
+title: 'Prime Factorization'
+subtitle: 'Case Study in Elixir Concurrency (Coming From Go)'
 author: 'Patrick Bucher'
 ---
 
@@ -10,8 +10,8 @@ _Communicating Sequential Processes_. There are many things in common, indeed:
 
 - Both Elixir's (or Erlang's) _processes_ and Go's _goroutines_ are
   light-weight. It's practical to have hundreds or even thousands of them, which
-  are mapped to operating system threads in a _n:m_ manner (n OS threads running
-  m processes/goroutines).
+  are mapped to operating system threads in a _n:m_ manner (_n_ OS threads
+  running _m_ processes/goroutines).
 - Both models facilitate message passing between concurrent units of executions
   (processes/goroutines).
 - Both languages offer language constructs to deal with incoming messages:
@@ -41,6 +41,25 @@ Having worked with Go's model, the author's goal is to become acquainted wich
 Elixir's model by solving the problem stated below.
 
 # Problem
+
+Natural numbers can be expressed as a product of prime numbers. For example, 12
+can be expressed as the product of 2, 2, and 3, whereas 13, which is a prime
+number itself, can be expressed as a product of 13. A few examples:
+
+| Number |       Prime Factors |
+|-------:|--------------------:|
+|     24 |          2, 2, 2, 3 |
+|     30 |             2, 3, 5 |
+|    128 | 2, 2, 2, 2, 2, 2, 2 |
+|    140 |          2, 2, 5, 7 |
+
+The prime factors of a number $x$ can be found as follows:
+
+1. All the prime numbers $p$ in the range $2 \leq p \le \sqrt{x}$ have to be
+   found (by brute force or using an algorithm such as the [Sieve of
+   Eratosthenes](https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes)).
+2. TODO
+
 
 TODO: prime factorization, finding prime numbers (CPU-bound)
 
