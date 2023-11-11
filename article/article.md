@@ -1,6 +1,6 @@
 ---
-title: 'Prime Factorization'
-subtitle: 'Case Study in Elixir Concurrency (Coming From Go)'
+title: 'Concurrent Prime Factorization'
+subtitle: 'Case Study in Elixir (Coming From Go)'
 author: 'Patrick Bucher'
 ---
 
@@ -46,12 +46,12 @@ Natural numbers can be expressed as a product of prime numbers. For example, 12
 can be expressed as the product of 2, 2, and 3, whereas 13, which is a prime
 number itself, can be expressed as a product of 13. A few examples:
 
-| Number |       Prime Factors |
-|-------:|--------------------:|
-|     24 |          2, 2, 2, 3 |
-|     30 |             2, 3, 5 |
-|    128 | 2, 2, 2, 2, 2, 2, 2 |
-|    140 |          2, 2, 5, 7 |
+| Number |    Prime Factors | Check                                                       |
+|-------:|-----------------:|-------------------------------------------------------------|
+|     24 |       2, 2, 2, 3 | $2 \times 2 \times 2 \times 3 = 24$                         |
+|     30 |          2, 3, 5 | $2 \times 3 \times 5 = 30$                                  |
+|     64 | 2, 2, 2, 2, 2, 2 | $2 \times 2 \times 2 \times 2 \times 2 \times 2 = 2^6 = 64$ |
+|    140 |       2, 2, 5, 7 | $2 \times 2 \times 5 \times 7 = 140$                        |
 
 The prime factors of a number $x$ can be found as follows:
 
@@ -68,10 +68,10 @@ The prime factors of a number $x$ can be found as follows:
     2. If $r$ is a natural number, $p_i$ is added to the sequence of prime
        factors. This step is repeated with $x=r$ as long as the remainder $r$
        is a natural number.
-    3. If the remainder $r is not a natural number, step 2.2 is tried with the
-       next prime number $p_{i+1}$.
-    4. The process finishes when the remainder $r$ becomes $1$ and yields the
-       sequence of found prime factors as its result.
+    3. If the remainder $r$ is not a natural number, the above step is retried
+       with the next prime number $p_{i+1}$.
+    4. The process finishes when the remainder $r$ becomes $1$. The sequence of
+       found prime factors is returned as the result.
 
 This computation, especially the first step (finding the prime numbers), is
 computationally expensive. If the task of finding prime factors is extended to
