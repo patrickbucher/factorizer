@@ -61,15 +61,24 @@ The prime factors of a number $x$ can be found as follows:
    (Only finding the prime numbers $\leq \sqrt{x}$ is a heuristic, because no
    natural number results from the division of $x$ by a prime number $p >
    \sqrt{x}$.)
-2. The sequence of prime numbers found, which must be ordered ascendingly, is
-   processed as follows:
-    1. The number $x$ is divided by the first prime number $p_i$.
-    2. If this division yields a natural number, $p_i$ is added to the sequence
-       of prime factors, and $x$ becomes the result of that division. This step
-       is repeated, until the division of $p_i$ yields a fraction.
+2. The sequence of prime numbers found of length $n$, which must be ordered
+   ascendingly, is processed from $p_0$ to $p_{n-1}$ with index $i$:
+    1. The number $x$ is divided by the prime number $p_i$, yielding a rest $r$
+       ($r=x \div p_i$).
+    2. If $r$ is a natural number, $p_i$ is added to the sequence of prime
+       factors. This step is repeated with $x=r$ as long as the remainder $r$
+       is a natural number.
+    3. If the remainder $r is not a natural number, step 2.2 is tried with the
+       next prime number $p_{i+1}$.
+    4. The process finishes when the remainder $r$ becomes $1$ and yields the
+       sequence of found prime factors as its result.
 
-
-TODO: prime factorization, finding prime numbers (CPU-bound)
+This computation, especially the first step (finding the prime numbers), is
+computationally expensive. If the task of finding prime factors is extended to
+multiple numbers to be factorized, the work can be parallelized, because the
+individual factorizations can be performed independently. The prime
+factorization of a sequence of natural numbers is therefore a problem well
+suited for a case study in CPU-bound concurrency.
 
 # Building Blocks
 
