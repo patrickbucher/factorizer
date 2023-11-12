@@ -43,22 +43,31 @@ Elixir's model by solving the problem stated below.
 # Problem
 
 Natural numbers can be expressed as a product of prime numbers. For example, 12
-can be expressed as the product of 2, 2, and 3, whereas 13, which is a prime
-number itself, can be expressed as a product of 13. A few examples:
+is the product of 2, 2, and 3, whereas 13, which is a prime number itself, is
+the product of 13 (and the neutral element 1, which is not a prime number). A
+few examples:
 
-| Number |    Prime Factors | Check                                                       |
-|-------:|-----------------:|-------------------------------------------------------------|
-|     24 |       2, 2, 2, 3 | $2 \times 2 \times 2 \times 3 = 24$                         |
-|     30 |          2, 3, 5 | $2 \times 3 \times 5 = 30$                                  |
-|     64 | 2, 2, 2, 2, 2, 2 | $2 \times 2 \times 2 \times 2 \times 2 \times 2 = 2^6 = 64$ |
-|    140 |       2, 2, 5, 7 | $2 \times 2 \times 5 \times 7 = 140$                        |
+| Number | Prime Factors |                                 Check |
+|-------:|--------------:|--------------------------------------:|
+|     12 |       2, 2, 3 |            $2 \times 2 \times 3 = 12$ |
+|     13 |            13 |                             $13 = 13$ |
+|     24 |    2, 2, 2, 3 |   $2 \times 2 \times 2 \times 3 = 24$ |
+|     30 |       2, 3, 5 |            $2 \times 3 \times 5 = 30$ |
+|    140 |    2, 2, 5, 7 |  $2 \times 2 \times 5 \times 7 = 140$ |
+|    580 |   2, 2, 5, 29 | $2 \times 2 \times 5 \times 29 = 580$ |
+
+Factorizing a number into its prime factors is useful for arithmetics (finding
+the greatest common divisor of two numbers, canceling fractions) or for
+cryptoanalysis (e.g. cracking RSA key-pairs).
+
+## Algorithm
 
 The prime factors of a number $x$ can be found as follows:
 
-1. All the prime numbers $p$ in the range $2 \leq p \leq \sqrt{x}$ have to be
-   found, which can be achieved using brute force or an algorithm such as the
-   [Sieve of Eratosthenes](https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes).
-   (Only finding the prime numbers $\leq \sqrt{x}$ is a heuristic, because no
+1. The prime numbers $p$ in the range $2 \leq p \leq \sqrt{x}$ have to be found,
+   which can be achieved using brute force or an algorithm such as the [Sieve of
+   Eratosthenes](https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes).  (Only
+   finding the prime numbers $p \leq \sqrt{x}$ is a heuristic, because no
    natural number results from the division of $x$ by a prime number $p >
    \sqrt{x}$.)
 2. The sequence of prime numbers found of length $n$, which must be ordered
@@ -82,13 +91,98 @@ suited for a case study in CPU-bound concurrency.
 
 # Building Blocks
 
-TODO: setup using mix, prime sieve (of Eratosthenes), factorization, stop watch,
-unit tests
+First, the algorithm described in the section above shall be implemented in a
+new Elixir project, which is created using the `mix` tool (using Elixir
+v1.15.7):
 
-This project was created using Elixir's `mix` tool:
-
-    # TODO: check if this is correct
     $ mix new factorizer
+
+This creates a scaffold in the folder `factorizer/` with source code files in
+the `lib/` sub-folder, and test cases in `test/`. A module called `Factorizer`
+is already provided in `lib/factorizer.ex`, which shall be implemented in the
+next step.
+
+## Prime Sieve (of Eratosthenes)
+
+Before factorization can be dealt with, prime numbers have to be found. The
+module `PrimeSieve`  implemented in `lib/prime_sieve.ex` uses a lazy
+[Stream](https://hexdocs.pm/elixir/1.15.7/Stream.html) to implement the Sieve of
+Eratosthenes.
+
+The `Stream.unfold/2` function requires two arguments: An initial accumulator of
+already found prime numbers, which initially is the empty list `[]`, and a
+function expecting the accumulator and returning a two-element tuple: the first
+element being the next prime number found, and the second element being the new
+accumulator—the list of prime numbers found, including the one just found as the
+list's head. This function is called again with the updated accumulator to find
+the next prime number:
+
+```elixir
+Stream.unfold([], fn
+  [] -> {2, [2]}
+  [h | t] -> next(h + 1, [h | t])
+end)
+```
+
+The anonymous function used for the computation of the next element has two
+clauses: The first matching an empty list returns 2 as the first prime number
+with a new accumulator of `[2]` as the prime numbers found so far; the second
+matches a non-empty list, for which the next prime number is to be found based
+on the list's head. (Like lists, streams are built up by adding elements to its
+head).
+
+The `next/2` function is implemented as follows:
+
+```elixir
+defp next(n, primes) do
+  if Enum.any?(primes, fn p -> rem(n, p) == 0 end) do
+    next(n + 1, primes)
+  else
+    {n, [n | primes]}
+  end
+end
+```
+
+The first parameter `n` is the number to be tried for primality using the prime
+numbers already found given as the second parameter `primes`. Whether or not `n`
+is a prime number is decided using the `Enum.any/2` higher-order function, which
+is stated in the negative: If `n` is divisible without a remainder by _any_
+smaller prime number, it is _not_ a prime number. The successor of `n` shall be
+retried in this case, without extending the accumulator, since no new prime
+number was found. If none of the prime numbers divides `n` without a remainder,
+`n` is a prime number, which is both returned as the next element of the stream,
+and as the head of the updated accumulator.
+
+For the public API of the `PrimeSieve` module, the following functions are
+offered:
+
+```elixir
+def first(n) do
+  stream() |> Enum.take(n)
+end
+
+def up_to(n) do
+  stream() |> Enum.take_while(&(&1 <= n))
+end
+
+def stream() do
+  Stream.unfold([], fn
+    [] -> {2, [2]}
+    [h | t] -> next(h + 1, [h | t])
+  end)
+end
+```
+
+1. `first/1`: Returning a sequence of the first `n` prime numbers.
+2. `up_to/1`: Returning a sequence of the first prime numbers up to and
+   including `n`.
+3. `stream/0`: Returning the stream to be consumed directly by the caller.
+
+See `lib/prime_sieve.ex` for the full implementation of the `PrimeSieve` module.
+
+## Prime Factorization
+
+TODO
 
 # Basic Implementation
 

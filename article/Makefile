@@ -1,4 +1,4 @@
-PARAMS=-V lang=en
+PARAMS=-N -V lang=en -V linkcolor=darkblue
 PDF_PARAMS=-s --pdf-engine=xelatex -V documentclass=scrartcl -V papersize=a4
 FONTS=-V mainfont="Crimson Pro" -V sansfont="Lato" -V monofont="Fantasque Sans Mono"
 DATE=-V date="`date +'%Y-%m-%d'`"
