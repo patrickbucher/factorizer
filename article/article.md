@@ -14,7 +14,7 @@ _Communicating Sequential Processes_. There are many things in common, indeed:
   running _m_ processes/goroutines).
 - Both models facilitate message passing between concurrent units of executions
   (processes/goroutines).
-- Both languages offer language constructs to deal with incoming messages:
+- Both languages offer language constructs for dealing with incoming messages:
   `receive` in Elixir, `select/case` and the arrow operator `<-` in Go.
 
 However, there are a few important differences, which may make a programmer
@@ -23,18 +23,19 @@ model like Java, for that matter) to Elixir struggle:
 
 - In Elixir, processes do not share memory, whereas Go offers facilities for
   both concurrency styles—message passing and shared memory.
-- Elixir's `spawn/1` starts a new process and returns a process identifier
-  (PID), whereas Go's `go` creates a new goroutine and returns nothing.
+- Elixir's `spawn/1` function starts a new process and returns a process
+  identifier (PID), whereas Go's `go` keyword creates and starts a new goroutine
+  and returns nothing.
 - Knowing a process' PID is sufficient to send it a message in Elixir, whereas
   in Go channels known to both goroutines are required for communication between
   them.
 - As a consequence, a goroutine can wait for a message from a specific channel
   (possibly only known to another specific goroutine), whereas in Elixir a
-  process can just wait for any message coming from any process.
+  process can just wait for any incoming message being sent from any process.
 - Implementing a message loop in Elixir requires (tail) recursion, whereas Go
   uses (infinite) loops.
-- Being a dynamically typed language, incoming messages are matched against a
-  pattern in Elixir, whereas Go uses typed channels, which deliver messages of
+- Being a dynamically typed language, incoming messages are matched against
+  patterns in Elixir, whereas Go uses typed channels, which deliver messages of
   the same type and shape.
 
 Having worked with Go's model, the author's goal is to become acquainted wich
@@ -99,8 +100,8 @@ v1.15.7):
 
 This creates a scaffold in the folder `factorizer/` with source code files in
 the `lib/` sub-folder, and test cases in `test/`. A module called `Factorizer`
-is already provided in `lib/factorizer.ex`, which shall be implemented in the
-next step.
+is already provided in `lib/factorizer.ex`, which shall be implemented right
+after the next step.
 
 ## Prime Sieve (of Eratosthenes)
 
@@ -114,8 +115,8 @@ already found prime numbers, which initially is the empty list `[]`, and a
 function expecting the accumulator and returning a two-element tuple: the first
 element being the next prime number found, and the second element being the new
 accumulator—the list of prime numbers found, including the one just found as the
-list's head. This function is called again with the updated accumulator to find
-the next prime number:
+list's head. This function is called later again with the updated accumulator to
+find the next prime number:
 
 ```elixir
 Stream.unfold([], fn
@@ -152,6 +153,18 @@ retried in this case, without extending the accumulator, since no new prime
 number was found. If none of the prime numbers divides `n` without a remainder,
 `n` is a prime number, which is both returned as the next element of the stream,
 and as the head of the updated accumulator.
+
+Why is a number $n$ only checked for divisability by _prime_ numbers $p < n$ and
+not by _all_ numbers $m < n$? Because if $n$ is not divisible by $m$, it won't
+be divisible by $m^2$. E.g. if $13$ is not divisible by $2$, how could it be
+divisible by $4=2^2$, which is the same as being divisible by $2$ _twice_?
+
+A further optimization would be to filter `primes` to $p <= \frac{n}{2}$,
+because no $p > \frac{n}{2}$ could divide $n$ such that the result would be a
+natural number (e.g. $13 \div 7 < 1$). Adding this optimization is left as an
+exercise to the reader. (Note that `primes` is built up in _descending_ order,
+i.e. with the biggest element on the left, which requires reversing the list for
+such optimisations.)
 
 For the public API of the `PrimeSieve` module, the following functions are
 offered:
