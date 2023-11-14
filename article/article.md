@@ -63,14 +63,17 @@ cryptoanalysis (e.g. cracking RSA key-pairs).
 
 ## Algorithm
 
-The prime factors of a number $x$ can be found as follows:
+The prime factors of a number $x$ can be found as follows using the _Trial
+Division Method_, which is rather inefficient, but easy to understand:
 
 1. The prime numbers $p$ in the range $2 \leq p \leq \sqrt{x}$ have to be found,
    which can be achieved using brute force or an algorithm such as the [Sieve of
-   Eratosthenes](https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes).  (Only
-   finding the prime numbers $p \leq \sqrt{x}$ is a heuristic, because no
-   natural number results from the division of $x$ by a prime number $p >
-   \sqrt{x}$.)
+   Eratosthenes](https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes).
+   - Only finding the prime numbers $p \leq \sqrt{x}$ is sufficient: If $n$ is
+     divisible by $p$, then $n = p \times q$. Checking divisibility of $n$ by $q
+     >= p$ will only give results that would have been found earlier in the
+     process. If $p = q$, then $n = p^2$ and $\sqrt{n} = p$, so $\sqrt{n}$ is
+     the upper limit of primes to be tested divisibility for.
 2. The sequence of prime numbers found of length $n$, which must be ordered
    ascendingly, is processed from $p_0$ to $p_{n-1}$ with index $i$:
     1. The number $x$ is divided by the prime number $p_i$, yielding a rest $r$
@@ -195,7 +198,23 @@ See `lib/prime_sieve.ex` for the full implementation of the `PrimeSieve` module.
 
 ## Prime Factorization
 
-TODO
+Prime factorization is implemented in the `PrimeFactors` module
+(`lib/prime_factors.ex`). The public API consists solely of the function
+`factorize/1`, which accepts a number `n` to be factorized, and returns a list
+of prime factors:
+
+```elixir
+def factorize(n) do
+  primes = PrimeSieve.up_to(:math.sqrt(n))
+  next(primes, n, [])
+end
+```
+
+First, the prime numbers up to and including $\sqrt{n}$ are found using
+`PrimeSieve.up_to/1`. Second, the prime factors are determined using those prime
+numbers and the `next/3` function.
+
+TODO: explain `next/3` with its different clauses.
 
 # Basic Implementation
 
