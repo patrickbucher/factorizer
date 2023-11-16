@@ -162,12 +162,10 @@ not by _all_ numbers $m < n$? Because if $n$ is not divisible by $m$, it won't
 be divisible by $m^2$. E.g. if $13$ is not divisible by $2$, how could it be
 divisible by $4=2^2$, which is the same as being divisible by $2$ _twice_?
 
-A further optimization would be to filter `primes` to $p <= \frac{n}{2}$,
+A further optimisation would be to filter `primes` to $p <= \frac{n}{2}$,
 because no $p > \frac{n}{2}$ could divide $n$ such that the result would be a
-natural number (e.g. $13 \div 7 < 1$). Adding this optimization is left as an
-exercise to the reader. (Note that `primes` is built up in _descending_ order,
-i.e. with the biggest element on the left, which requires reversing the list for
-such optimisations.)
+natural number (e.g. $13 \div 7 < 1$). This is left as an exercise to the
+reader. (Note that `primes` is built up in _descending_ order.)
 
 For the public API of the `PrimeSieve` module, the following functions are
 offered:
@@ -239,10 +237,9 @@ end
 
 Since the accumulator is built up from the head, it is reversed for the final
 result so that the smallest factor is at the beginning of the list and the
-biggest factor at the end of the list.
+biggest factor at the end of it.
 
-The general case implements trial division as the general case of the `next/3`
-function:
+Trial division is implemented as the general case of the `next/3` function:
 
 ```elixir
 defp next(n, [h | t], acc) do
@@ -275,6 +272,13 @@ The `PrimeFactors.factorize/1` function can be used as follows in `iex`:
 ```elixir
 > PrimeFactors.factorize(1050)
 [2, 3, 5, 5, 7]
+```
+
+The result can be checked by multiplying the found prime factors:
+
+```elixir
+> Enum.reduce([2, 3, 5, 5, 7], &*/2)
+1050
 ```
 
 # Basic Implementation
