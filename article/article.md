@@ -70,8 +70,8 @@ Division Method_, which is rather inefficient, but easy to understand:
    which can be achieved using brute force or an algorithm such as the [Sieve of
    Eratosthenes](https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes).
    - Only finding the prime numbers $p \leq \sqrt{x}$ is sufficient: If $n$ is
-     divisible by $p$, then $n = p \times q$. Checking divisibility of $n$ by $q
-     >= p$ will only give results that would have been found earlier in the
+     divisible by $p$, then $n = p \times q$. Checking divisibility of $n$ by
+     $q >= p$ will only give results that would have been found earlier in the
      process. If $p = q$, then $n = p^2$ and $\sqrt{n} = p$, so $\sqrt{n}$ is
      the upper limit of primes to be tested for divisibility.
 2. The sequence of prime numbers found of length $n$, which must be ordered
