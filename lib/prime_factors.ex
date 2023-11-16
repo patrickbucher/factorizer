@@ -16,11 +16,11 @@ defmodule PrimeFactors do
     Enum.reverse([n | acc])
   end
 
-  defp next(factors, n, acc) do
-    [h | t] = factors
+  defp next(primes, n, acc) do
+    [h | t] = primes
 
     if rem(n, h) == 0 do
-      next(factors, div(n, h), [h | acc])
+      next(primes, div(n, h), [h | acc])
     else
       next(t, n, acc)
     end
