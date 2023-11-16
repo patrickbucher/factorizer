@@ -73,7 +73,7 @@ Division Method_, which is rather inefficient, but easy to understand:
      divisible by $p$, then $n = p \times q$. Checking divisibility of $n$ by $q
      >= p$ will only give results that would have been found earlier in the
      process. If $p = q$, then $n = p^2$ and $\sqrt{n} = p$, so $\sqrt{n}$ is
-     the upper limit of primes to be tested divisibility for.
+     the upper limit of primes to be tested for divisibility.
 2. The sequence of prime numbers found of length $n$, which must be ordered
    ascendingly, is processed from $p_0$ to $p_{n-1}$ with index $i$:
     1. The number $x$ is divided by the prime number $p_i$, yielding a rest $r$
@@ -206,15 +206,76 @@ of prime factors:
 ```elixir
 def factorize(n) do
   primes = PrimeSieve.up_to(:math.sqrt(n))
-  next(primes, n, [])
+  next(n, primes, [])
 end
 ```
 
 First, the prime numbers up to and including $\sqrt{n}$ are found using
 `PrimeSieve.up_to/1`. Second, the prime factors are determined using those prime
-numbers and the `next/3` function.
+numbers and the `next/3` function, which expects three parameters: the number to
+be factorized, the prime numbers to be tested divisibility for, and an
+accumulator to collect the found prime factors.
 
-TODO: explain `next/3` with its different clauses.
+There are two base cases to be covered:
+
+1. The number to be factorized has been divided down to 1, in which case the
+   accumulator is the result of the factorization. (1 is the neutral element of
+   the division and not a prime number, hence not part of the result.)
+2. The prime numbers to be tried have been exhausted, in which case the
+   remainder must be a prime number itself and is added as the final prime
+   factor to the result.
+
+Those base cases are handled by the following function clauses:
+
+```elixir
+defp next(1, [], acc) do
+  Enum.reverse(acc)
+end
+
+defp next(n, [], acc) do
+  Enum.reverse([n | acc])
+end
+```
+
+Since the accumulator is built up from the head, it is reversed for the final
+result so that the smallest factor is at the beginning of the list and the
+biggest factor at the end of the list.
+
+The general case implements trial division as the general case of the `next/3`
+function:
+
+```elixir
+defp next(n, [h | t], acc) do
+  if rem(n, h) == 0 do
+    next(div(n, h), [h | t], [h | acc])
+  else
+    next(n, t, acc)
+  end
+end
+```
+
+If the given number `n` is divisible by the first prime number `h`, then `h` is
+a prime factor. The following arguments are passed to the recursive call:
+
+1. The remainder of dividng `n` by `h`.
+2. The same prime numbers that have been received by the current call.
+3. The accumulator with `h` as another prime factor at its head.
+
+Otherwise, `h` is not a prime factor, in which case the original number, the
+remaining prime numbers, and the given accumulator are passed to the recursive
+call.
+
+In the first case (success), the first argument `n` is reduced towards 1; in the
+second case (failure), the second argument (prime numbers) is reduced towards
+the empty list. So both cases are reduced to one of the two base cases explained
+above.
+
+The `PrimeFactors.factorize/1` function can be used as follows in `iex`:
+
+```elixir
+> PrimeFactors.factorize(1050)
+[2, 3, 5, 5, 7]
+```
 
 # Basic Implementation
 

@@ -1,28 +1,22 @@
 defmodule PrimeFactors do
   def factorize(n) do
     primes = PrimeSieve.up_to(:math.sqrt(n))
-    next(primes, n, [])
+    next(n, primes, [])
   end
 
-  defp next(_, 0, acc) do
+  defp next(1, [], acc) do
     Enum.reverse(acc)
   end
 
-  defp next([], 1, acc) do
-    Enum.reverse(acc)
-  end
-
-  defp next([], n, acc) do
+  defp next(n, [], acc) do
     Enum.reverse([n | acc])
   end
 
-  defp next(primes, n, acc) do
-    [h | t] = primes
-
+  defp next(n, [h | t], acc) do
     if rem(n, h) == 0 do
-      next(primes, div(n, h), [h | acc])
+      next(div(n, h), [h | t], [h | acc])
     else
-      next(t, n, acc)
+      next(n, t, acc)
     end
   end
 end
