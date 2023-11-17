@@ -281,9 +281,101 @@ The result can be checked by multiplying the found prime factors:
 1050
 ```
 
+## Stopwatch
+
+In order to measure the running times of prime number factorization (or some
+other arbitrary code, for that matter), the `Stopwatch` module
+(`lib/stopwatch.ex`) is provided:
+
+```elixir
+defmodule Stopwatch do
+  def timed(fun) do
+    {time, value} = :timer.tc(fun)
+    seconds = time / 1.0e6
+    IO.puts("#{seconds}s")
+    value
+  end
+end
+```
+
+The function `timed/1` expects a function, which is run by the Erlang function
+`:timer.tc/1`. This function returns both a time (in milliseconds) and the
+result of the given function. The measured time is converted to seconds and
+printed to the console; the value is returned.
+
+The `Stopwatch.timed/1` function can be used as follows:
+
+```elixir
+> Stopwatch.timed(fn -> PrimeFactors.factorize(1_000_000_000) end)
+0.415278s
+[2, 2, 2, 2, 2, 2, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5]
+```
+
+This allows for some rough comparisons between implementations, which is enough
+for our purposes. (One needs to run functions repeatedly to extract reliable
+benchmarks.)
+
 # Basic Implementation
 
-TODO: Factorizer, without Concurrency, `factorizer.ex` is `Factorizer`, etc.
+Having the building blocks (finding prime numbers, factorizing a single number)
+together, an first implementation for the problem initially stated can be
+provided: the module `Factorizer` (`lib/factorizer.ex`), which provides the
+function `factorize/1`:
+
+```elixir
+defmodule Factorizer do
+  def factorize(numbers) do
+    Enum.map(numbers, fn n ->
+      {n, PrimeFactors.factorize(n)}
+    end)
+    |> Map.new()
+  end
+end
+```
+
+The function `factorize/1` expects a single argument, which is a sequence of
+unique numbers. These numbers are factorized using `PrimeFactors.factorize/1`,
+which was in the section before. Each operation, which is performed using
+`Enum.map/2`, returns a tuple consisting of the original number as the first
+element, and the prime factors found as the second element. Those results are
+transformed into a map with the original numbers as its keys and the found
+factors as the values.
+
+The module can be used as follows (e.g. with literal lists or ranges):
+
+```elixir
+> Factorizer.factorize([10, 20, 30])
+%{10 => [2, 5], 20 => [2, 2, 5], 30 => [2, 3, 5]}
+
+> Factorizer.factorize(10..15)
+%{
+  10 => [2, 5],
+  11 => [11],
+  12 => [2, 2, 3],
+  13 => [13],
+  14 => [2, 7],
+  15 => [3, 5]
+}
+```
+
+Factorizing a couple of big numbers in the range of $10^9$ now takes
+considerable time:
+
+```elixir
+Stopwatch.timed(fn -> Factorizer.factorize(1_000_000_000..1_000_000_005) end)
+2.40538s
+%{
+  1000000000 => [2, 2, 2, 2, 2, 2, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+  1000000001 => [7, 11, 13, 19, 52579],
+  1000000002 => [2, 3, 43, 983, 3943],
+  1000000003 => [23, 307, 141623],
+  1000000004 => [2, 2, 41, 41, 148721],
+  1000000005 => [3, 5, 66666667]
+}
+```
+
+This timing of ~2.4 seconds shall be reduced by introducing concurrency, which
+allows for parallel execution on a machine with multiple CPUs.
 
 # Basic Parallel Implementation
 
