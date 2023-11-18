@@ -379,7 +379,55 @@ allows for parallel execution on a machine with multiple CPUs.
 
 # Basic Parallel Implementation
 
-TODO: using primitives
+The `Factorizer` module shall be rewritten using Elixir concurrency primitives
+in order to speed up the process on a computer with multiple CPUs. In contrast
+to the short and simple solution from above, the process is handled in multiple
+stages:
+
+1. Startup: Multiple processes are spawned.
+2. Distribution: The numbers to be factorized are distributed to the running
+   processes.
+3. Collection: The results of the factorization are gathered to a overall
+   result.
+
+The `ParallelFactorizer` module has a single function `factorize/1`, which
+expects a list of unique numbers and returns a map with those original numbers
+(keys) mapped to their prime factors (values)—exactly like
+`Factorizer.factorize/1`. However, the implementation is more involved.
+
+First, one process per number is spawned:
+
+```elixir
+pids_by_number =
+  Enum.map(numbers, fn n ->
+    pid =
+      spawn(fn ->
+        receive do
+          {caller, number} ->
+            send(caller, {number, PrimeFactors.factorize(number)})
+        end
+      end)
+
+    {n, pid}
+  end)
+  |> Map.new()
+```
+
+The `spawn/1` function expects a function to be run in a separate process. Here,
+this function only expects a single message: A tuple consisting of the caller's
+process id (PID), and the number to be factorized. A response is sent using the
+`send/2` function, which expects a PID (here: the caller's PID), and a response,
+which is a tuple of the original number and the prime factors found using
+`PrimeFactors.factorize/1`.
+
+The processes are spawned from the `Enum.map/2` higher-order function, which
+returns a tuple for every number processed consisting of the original number and
+a PID of the process that has been spawned to process said number. The resulting
+enumeration of tuples is converted to a map, which allows for lookups of
+processes by numbers.
+
+TODO: distribution
+TODO: collection
 
 # Client/Server Implementation
 

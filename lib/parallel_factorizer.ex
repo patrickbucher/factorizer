@@ -1,6 +1,5 @@
 defmodule ParallelFactorizer do
   def factorize(numbers) do
-    # start one process per number
     pids_by_number =
       Enum.map(numbers, fn n ->
         pid =
@@ -15,12 +14,10 @@ defmodule ParallelFactorizer do
       end)
       |> Map.new()
 
-    # send one message per number
     Enum.each(pids_by_number, fn {number, pid} ->
       send(pid, {self(), number})
     end)
 
-    # collect messages
     Enum.reduce(numbers, %{}, fn _, acc ->
       receive do
         {number, factors} -> Map.put(acc, number, factors)
