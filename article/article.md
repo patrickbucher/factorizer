@@ -384,16 +384,17 @@ in order to speed up the process on a computer with multiple CPUs. In contrast
 to the short and simple solution from above, the process is handled in multiple
 stages:
 
-1. Startup: Multiple processes are spawned.
-2. Distribution: The numbers to be factorized are distributed to the running
-   processes.
-3. Collection: The results of the factorization are gathered to a overall
+1. _Startup_: Multiple processes are spawned, one per number to be processed.
+2. _Distribution_: The individual numbers to be factorized are distributed to
+   the running processes.
+3. _Collection_: The results of the factorization are gathered to an overall
    result.
 
-The `ParallelFactorizer` module has a single function `factorize/1`, which
-expects a list of unique numbers and returns a map with those original numbers
-(keys) mapped to their prime factors (values)—exactly like
-`Factorizer.factorize/1`. However, the implementation is more involved.
+The `ParallelFactorizer` (`lib/parallel_factorizer.ex`) module has a single
+function `factorize/1`, which expects a list of unique numbers and returns a
+map with those original numbers (keys) mapped to their prime factors
+(values)—exactly like `Factorizer.factorize/1`. However, the implementation is
+more involved.
 
 First, one process per number is spawned:
 
@@ -434,9 +435,9 @@ Enum.each(pids_by_number, fn {number, pid} ->
 end)
 ```
 
-The map of PIDs by number created before is processed. A message consisting of
-the main processe's PID (accessed using the `self/0` function) and the number
-to be factorized is sent over to the respective process.
+The map of PIDs by number is now processed. A message consisting of the main
+process's PID (accessed using the `self/0` function) and the number to be
+factorized is sent over to the respective process.
 
 The work is now distributed, and the main process will receive their results in
 the order of their computation:
@@ -460,9 +461,9 @@ number as the key and the factors found as the value.
 The resulting map is also the result of the `factorize/1` function.
 
 The first two steps (spawning processes and distributing the work to them)
-could be done within a single operation instead of the two done in the above
-implementation. However, the separation into two phases makes the conceptual
-phases more congruent with the actual runtime phases.
+could have been handled within a single iteration instead of the two being
+performed in the above implementation. However, the separation into two phases
+makes the conceptual phases more congruent with the actual runtime phases.
 
 # Client/Server Implementation
 
