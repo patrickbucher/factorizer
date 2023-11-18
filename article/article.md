@@ -426,8 +426,43 @@ a PID of the process that has been spawned to process said number. The resulting
 enumeration of tuples is converted to a map, which allows for lookups of
 processes by numbers.
 
-TODO: distribution
-TODO: collection
+Note that no work has been assigned to the spawned processes yet. They first have to be activated by sending them a message, which happens in the next step:
+
+```elixir
+Enum.each(pids_by_number, fn {number, pid} ->
+  send(pid, {self(), number})
+end)
+```
+
+The map of PIDs by number created before is processed. A message consisting of
+the main processe's PID (accessed using the `self/0` function) and the number
+to be factorized is sent over to the respective process.
+
+The work is now distributed, and the main process will receive their results in
+the order of their computation:
+
+```elixir
+Enum.reduce(numbers, %{}, fn _, acc ->
+  receive do
+    {number, factors} -> Map.put(acc, number, factors)
+  end
+end)
+```
+
+The `Enum.reduce/3` higher-order function is used to process the numbers.
+However, the numbers themselves are not even of interested: It is only
+important that one message per number is received. The reduction starts with
+the empty map `%{}` to be used as the accumulator (`acc`), which is filled with
+the incoming result. For every message that is received—consisting of the
+original number and its prime factors found—the map is extended with that
+number as the key and the factors found as the value.
+
+The resulting map is also the result of the `factorize/1` function.
+
+The first two steps (spawning processes and distributing the work to them)
+could be done within a single operation instead of the two done in the above
+implementation. However, the separation into two phases makes the conceptual
+phases more congruent with the actual runtime phases.
 
 # Client/Server Implementation
 
