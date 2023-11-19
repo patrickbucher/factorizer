@@ -89,9 +89,10 @@ Division Method_, which is rather inefficient, but easy to understand:
 This computation, especially the first step (finding the prime numbers), is
 computationally expensive. If the task of finding prime factors is extended to
 multiple numbers to be factorized, the work can be parallelized, because the
-individual factorizations can be performed independently. The prime
-factorization of a sequence of natural numbers is therefore a problem well
-suited for a case study in CPU-bound concurrency.
+individual factorizations can be performed independently.
+
+The prime factorization of a sequence of natural numbers is therefore a problem
+well suited for a case study in CPU-bound concurrency.
 
 # Building Blocks
 
@@ -381,45 +382,30 @@ allows for parallel execution on a machine with multiple CPUs.
 
 The `Factorizer` module shall be rewritten using Elixir concurrency primitives
 in order to speed up the process on a computer with multiple CPUs. In contrast
-to the short and simple solution from above, the process is handled in multiple
-stages:
+to the short and simple solution from above, the computation is handled in
+multiple stages:
 
 1. _Startup_: Multiple processes are spawned, one per number to be processed.
-2. _Distribution_: The individual numbers to be factorized are distributed to
-   the running processes.
-3. _Collection_: The results of the factorization are gathered to an overall
+2. _Distribution_: The numbers to be factorized are distributed to the running
+   processes.
+3. _Collection_: The results of the factorizations are gathered to an overall
    result.
 
 The `ParallelFactorizer` (`lib/parallel_factorizer.ex`) module has a single
 function `factorize/1`, which expects a list of unique numbers and returns a
-map with those original numbers (keys) mapped to their prime factors
-(values)—exactly like `Factorizer.factorize/1`. However, the implementation is
-more involved.
+map with those numbers (keys) mapped to their prime factors (values)—exactly
+like `Factorizer.factorize/1`. However, the implementation is more involved.
 
 First, one process per number is spawned:
 
 ```elixir
 pids_by_number =
   Enum.map(numbers, fn n ->
-    pid =
-      spawn(fn ->
-        receive do
-          {caller, number} ->
-            send(caller, {number, PrimeFactors.factorize(number)})
-        end
-      end)
-
+    pid = spawn(&handle/0)
     {n, pid}
   end)
   |> Map.new()
 ```
-
-The `spawn/1` function expects a function to be run in a separate process. Here,
-this function only expects a single message: A tuple consisting of the caller's
-process id (PID), and the number to be factorized. A response is sent using the
-`send/2` function, which expects a PID (here: the caller's PID), and a response,
-which is a tuple of the original number and the prime factors found using
-`PrimeFactors.factorize/1`.
 
 The processes are spawned from the `Enum.map/2` higher-order function, which
 returns a tuple for every number processed consisting of the original number and
@@ -427,7 +413,27 @@ a PID of the process that has been spawned to process said number. The resulting
 enumeration of tuples is converted to a map, which allows for lookups of
 processes by numbers.
 
-Note that no work has been assigned to the spawned processes yet. They first have to be activated by sending them a message, which happens in the next step:
+The `spawn/1` function, which starts a child process, expects a function to be
+run concurrently. Here, the `handle/1` function is passed, which is defined as
+follows:
+
+```elixir
+defp handle() do
+  receive do
+    {caller, number} ->
+      send(caller, {number, PrimeFactors.factorize(number)})
+  end
+end
+```
+
+This function can only handle one kind of message: A tuple consisting of the
+caller's process id (PID), and the number to be factorized. A response is sent
+to the caller using the `send/2` function, which expects a PID (here: the
+caller's PID) and a response, which is a tuple of the original number and the
+prime factors found using `PrimeFactors.factorize/1`.
+
+Note that no work has been assigned to the spawned processes yet. They first
+have to be activated by sending them a message, which happens in the next step:
 
 ```elixir
 Enum.each(pids_by_number, fn {number, pid} ->
@@ -451,19 +457,34 @@ end)
 ```
 
 The `Enum.reduce/3` higher-order function is used to process the numbers.
-However, the numbers themselves are not even of interested: It is only
-important that one message per number is received. The reduction starts with
-the empty map `%{}` to be used as the accumulator (`acc`), which is filled with
-the incoming result. For every message that is received—consisting of the
-original number and its prime factors found—the map is extended with that
-number as the key and the factors found as the value.
-
-The resulting map is also the result of the `factorize/1` function.
+However, the numbers themselves are not even of interest: It is only important
+that one message per number is received. The reduction starts with the empty map
+`%{}` to be used as the accumulator (`acc`), which is filled with the incoming
+results. For every message that is received—consisting of the original number
+and its prime factors found—the map is extended with that number as the key and
+the prime factors found as the value. This resulting map is also the result of
+the `factorize/1` function.
 
 The first two steps (spawning processes and distributing the work to them)
 could have been handled within a single iteration instead of the two being
-performed in the above implementation. However, the separation into two phases
-makes the conceptual phases more congruent with the actual runtime phases.
+performed in the implementation just described. However, the separation into two
+phases makes the conceptual phases more congruent with the actual runtime
+phases.
+
+The computation has been sped up considerably:
+
+```elixir
+> Stopwatch.timed(fn -> ParallelFactorizer.factorize(1_000_000_000..1_000_000_005) end)
+0.643088s
+%{
+  1000000000 => [2, 2, 2, 2, 2, 2, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+  # ...
+  1000000005 => [3, 5, 66666667]
+}
+```
+
+From ~2.4 to 0.6 seconds, which is roughly a fourfold improvement—which is no
+surprise on a computer with four CPU cores.
 
 # Client/Server Implementation
 
