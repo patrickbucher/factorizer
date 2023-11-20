@@ -483,8 +483,8 @@ The computation has been sped up considerably:
 }
 ```
 
-From ~2.4 to 0.6 seconds, which is roughly a fourfold improvement—which is no
-surprise on a computer with four CPU cores.
+From ~2.4 to ~0.64 seconds, which is roughly a fourfold improvement—no surprise
+on a computer with four CPU cores.
 
 # Client/Server Implementation
 
