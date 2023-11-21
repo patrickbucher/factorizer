@@ -488,7 +488,111 @@ on a computer with four CPU cores.
 
 # Client/Server Implementation
 
-TODO: splitting concurrency boiler-plate from program logic
+Elixir processes are lightweight, therefore it's not an issue to spawn many of
+them, i.e. one unit of work such as a number to be factorized. However, with `n`
+CPUs given, no more than `n` processes will run at the same time. Instead of
+spawning one process for each number to be factorized, one long-running process
+per CPU can be spawned. The work is then distributed to those _server
+processes_, which accept and process messages in a loop.
+
+First, let's have a look at the server process implemented in its own module
+`FactorizerServer` (`lib/factorizer_server.ex`):
+
+```elixir
+defmodule FactorizerServer do
+  def start do
+    spawn(&loop/0)
+  end
+
+  def factorize(server_pid, number) do
+    send(server_pid, {self(), number})
+  end
+
+  defp loop do
+    receive do
+      {caller, number} ->
+        send(caller, {number, PrimeFactors.factorize(number)})
+    end
+
+    loop()
+  end
+end
+```
+
+The server process is created using the `start/0` function, which spawns a new
+process and returns its PID. (The server runs the `loop/0` function, which
+processes incoming messages.) Using that PID, a client can call its
+`factorize/2` function with an additional number to be factorized. A message is
+sent to the respective process, which is then processed in `loop/0` by
+factorizing the number and sending it back with the computed result to the
+caller. The `loop/0` function calls itself to await the next message.
+
+Note that `start/0` and `factorize/2` run within the main process; only `loop/0`
+runs in the spawned process. The module `FactorizerServer` abstracts the
+concurrency details to some degree from its client, which is implemented in the
+module `FactorizerClient` (`lib/factorizer_client.ex`), consisting only of a
+single function `factorize/1`—just like the two other implementations discussed
+before.
+
+The concurrent prime factorization is performed in three phases again. First,
+the server processes are spawned, but this time, only one process per available
+CPU:
+
+```elixir
+pids_by_index =
+  Enum.reduce(0..(System.schedulers_online() - 1), %{}, fn i, acc ->
+    Map.put(acc, i, FactorizerServer.start())
+  end)
+```
+
+The sequence of $[0..n[$, with $n$ representing the number of CPUs (Elixir uses
+one scheduler per CPU), is processed. In each step, the spawned server process's
+PID is put into a map as the value with the index $[0..n[$ as its key.
+
+In the second phase, the work is distributed to the processes using round robin
+scheduling:
+
+```elixir
+Enum.reduce(numbers, 0, fn number, i ->
+  index = rem(i, System.schedulers_online())
+  pid = Map.get(pids_by_index, index)
+  FactorizerServer.factorize(pid, number)
+  i + 1
+end)
+```
+
+The numbers to be factorized are processed using `Enum.reduce/3`. Starting with
+an accumulator of 0, which is incremented in each step, the index is computed
+using a modulo operation and then used to get the proper PID out of the map
+holding the PIDs by index. `FactorizerServer.factorize/2` is called with the PID
+and the number to be processed. The index is incremented so that another PID
+will be picked for the next number.
+
+In the third and final phase, the incoming results are gathered in a map:
+
+```elixir
+Enum.reduce(numbers, %{}, fn _, acc ->
+  receive do
+    {number, factors} -> Map.put(acc, number, factors)
+  end
+end)
+```
+
+The performance is comparable to the first concurrent implementation:
+
+```elixir
+> Stopwatch.timed(fn -> FactorizerClient.factorize(1_000_000_000..1_000_000_005) end)
+0.640536s
+%{
+  1000000000 => [2, 2, 2, 2, 2, 2, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+  # ...
+  1000000005 => [3, 5, 66666667]
+}
+```
+
+With four CPUs available, factorizing six numbers in either six or four
+processes hardly makes any difference in overhead. (The overhead becomes
+apparent as more numbers are processed, though.)
 
 # Callback Implementation
 
