@@ -489,11 +489,11 @@ on a computer with four CPU cores.
 # Client/Server Implementation
 
 Elixir processes are lightweight, therefore it's not an issue to spawn many of
-them, i.e. one unit of work such as a number to be factorized. However, with `n`
-CPUs given, no more than `n` processes will run at the same time. Instead of
-spawning one process for each number to be factorized, one long-running process
-per CPU can be spawned. The work is then distributed to those _server
-processes_, which accept and process messages in a loop.
+them, i.e. one per unit of work (such as a number to be factorized). However,
+with `n` CPUs given, no more than `n` processes will run at the same time.
+Instead of spawning one process for each number to be factorized, one
+long-running process per CPU can be spawned. The work is then distributed to
+those _server processes_, which accept and process messages in a loop.
 
 First, let's have a look at the server process implemented in its own module
 `FactorizerServer` (`lib/factorizer_server.ex`):
@@ -521,17 +521,17 @@ end
 
 The server process is created using the `start/0` function, which spawns a new
 process and returns its PID. (The server runs the `loop/0` function, which
-processes incoming messages.) Using that PID, a client can call its
+processes incoming messages.) Using that PID, a client can call the
 `factorize/2` function with an additional number to be factorized. A message is
 sent to the respective process, which is then processed in `loop/0` by
 factorizing the number and sending it back with the computed result to the
-caller. The `loop/0` function calls itself to await the next message.
+caller. The `loop/0` function tail-calls itself to await the next message.
 
-Note that `start/0` and `factorize/2` run within the main process; only `loop/0`
-runs in the spawned process. The module `FactorizerServer` abstracts the
+Note that `start/0` and `factorize/2` run within the client process; only
+`loop/0` runs in the spawned server process. `FactorizerServer` abstracts the
 concurrency details to some degree from its client, which is implemented in the
 module `FactorizerClient` (`lib/factorizer_client.ex`), consisting only of a
-single function `factorize/1`—just like the two other implementations discussed
+single function `factorize/1`—just like the two implementations discussed
 before.
 
 The concurrent prime factorization is performed in three phases again. First,
@@ -562,13 +562,14 @@ end)
 ```
 
 The numbers to be factorized are processed using `Enum.reduce/3`. Starting with
-an accumulator of 0, which is incremented in each step, the index is computed
-using a modulo operation and then used to get the proper PID out of the map
-holding the PIDs by index. `FactorizerServer.factorize/2` is called with the PID
-and the number to be processed. The index is incremented so that another PID
+an accumulator of 0, the PID's index is computed using a modulo operation, which
+is then used to retrieve the proper PID from the map.
+`FactorizerServer.factorize/2` is called with the PID thus found and the number
+to be processed. The index is incremented so that another server process's PID
 will be picked for the next number.
 
-In the third and final phase, the incoming results are gathered in a map:
+In the third and final phase, the incoming results are gathered in a map, which
+is returned as the result of the entire factorization process:
 
 ```elixir
 Enum.reduce(numbers, %{}, fn _, acc ->
