@@ -1,6 +1,6 @@
 ---
 title: 'Concurrent Prime Factorization'
-subtitle: 'Case Study in Elixir (Coming From Go)'
+subtitle: 'A Go Programmer Learns Elixir Concurrency'
 author: 'Patrick Bucher'
 ---
 
