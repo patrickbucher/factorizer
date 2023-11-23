@@ -597,7 +597,96 @@ apparent as more numbers are processed, though.)
 
 # Callback Implementation
 
-TODO: introducing state, as well as cast/call message patterns
+The client/server implementation not only abstracted some messaging details, it
+also introduced long-running processes using a tail-call `loop/0` function. This
+pattern can be used to introduce state, which is advanced by calling such a
+`loop` function with an updated argument.
+
+Furthermore, the domain-specific code can be separated from the messaging
+details by splitting up the server process into a _generic part_ and a _callback
+module_. A generic server process provides the following operations:
+
+- A `start/1` function that expects a callback module as its sole argument and
+  spawns a new process. The initial state is provided by the callback module's
+  `init/0` function. The (private) `loop/2` function is then called with both
+  the callback module and the initial state. The PID of the spawned process is
+  returned.
+- A `cast/2` function that expects a PID and a request to be dealt with
+  asynchronuously.
+- A `call/2` function that also expects a PID and a request, which is dealt with
+  synchronuously.
+- A private `loop/2` function expecting a callback module and a state. This
+  function deals with incoming messages—both asynchronuous cast and synchronuous
+  call messages—by updating its received state, which is passed by a
+  tail-recursive call to itself.
+
+The `ServerProcess` module (`lib/server_process.ex`) is devoid of any
+domain-specific code (prime number factorization). Instead, it relies on a
+callback module to perform the domain-specific task. The functions described
+above are implemented as follows:
+
+```elixir
+def start(callback_module) do
+  spawn(fn ->
+    initial_state = callback_module.init()
+    loop(callback_module, initial_state)
+  end)
+end
+```
+
+The initial state is computed in a seperate process, which then continues
+running the loop based on that state. The returned PID is used by the caller to
+call `cast/2` and `call/2` functions:
+
+```elixir
+def cast(server_pid, request) do
+  send(server_pid, {:cast, request})
+end
+
+def call(server_pid, request) do
+  send(server_pid, {:call, request, self()})
+
+  receive do
+    {:response, response} -> response
+  end
+end
+```
+
+Both operations expect a PID and a request. The asynchronuous `cast` function
+just forwards the request to the server process, wrapping it as a `:cast`
+message. The synchronuous `call` function also forwards the request (wrapped as
+a `:call`) to the server process, but also provides its PID so that an answer
+can be provided synchronuously. This answer is awaited using `receive` and
+returned to the caller of the `call/2` function.
+
+The `loop/2` function, both dealing with `:cast` and `:call` requests in its own
+process, is implemented as follows:
+
+```elixir
+defp loop(callback_module, current_state) do
+  receive do
+    {:cast, request} ->
+      new_state =
+        callback_module.handle_cast(request, current_state)
+
+      loop(callback_module, new_state)
+
+    {:call, request, caller} ->
+      {response, new_state} =
+        callback_module.handle_call(request, current_state)
+
+      send(caller, {:response, response})
+      loop(callback_module, new_state)
+  end
+```
+
+Both `:cast` and `:call` requests are dealt with by calling the respective
+functions (`handle_cast/2` and `handle_call/2`) on the callback module. However,
+`:cast` messages only advance the state using a tail-call to `loop/2`, whereas
+`:call` messages are also answered with an immediate message back to the caller
+before the loop is invoked with the updated state.
+
+TODO: `FactorizerCallback` and `FactorizerCallbackClient`
 
 # GenServer Implementation
 
