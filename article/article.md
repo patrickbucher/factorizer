@@ -777,7 +777,39 @@ providing a domain-specific interface to the concurrent computations, only a
 client is needed making use of those facilities. This client is implemented as
 the module `FactorizerCallbackClient` (`lib/factorizer_callback_client.ex`).
 
-TODO: describe
+As in the other concurrent implementations, the process is handled in the same
+three phases—startup, distribution collection.
+
+First, one server per CPU/scheduler is started, but this time using the
+`FactorizerCallback` module:
+
+```elixir
+# TODO
+```
+
+Second, the work is distributed to the processes using round robin scheduling
+and the asynchronuous `factorize/2` function, and the pids are stored as the
+values in a map, indexed by the numbers they compute. Again, the
+`FactorizerCallback` module is used, which hides the messaging details:
+
+```elixir
+# TODO
+```
+
+Third, The results are collected into a map using the synchronuous
+`get_result/2` function. A simple error handling mechanism is implemented,
+sending potential errors to the standard output:
+
+```elixir
+# TODO
+```
+
+This code is not shorter, but devoid of any messaging or other
+concurrency-related concerns, which are all abstracted by the
+`FactorizerCallback` module working tightly together with the `ServerProcess`
+module.
+
+TODO: example call, timings, etc.
 
 # GenServer Implementation
 
