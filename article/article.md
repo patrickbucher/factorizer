@@ -620,6 +620,8 @@ module_. A generic server process provides the following operations:
   call messages—by updating its received state, which is passed by a
   tail-recursive call to itself.
 
+## The Server Module
+
 The `ServerProcess` module (`lib/server_process.ex`) is devoid of any
 domain-specific code (prime number factorization). Instead, it relies on a
 callback module to perform the domain-specific task. The functions described
@@ -686,7 +688,90 @@ functions (`handle_cast/2` and `handle_call/2`) on the callback module. However,
 `:call` messages are also answered with an immediate message back to the caller
 before the loop is invoked with the updated state.
 
-TODO: `FactorizerCallback` and `FactorizerCallbackClient`
+## The Callback Module
+
+The callback module, referred to as `callback_module` from various functions in
+`ServerProcess` is implemented in `FactorizerCallback`. It provides two kinds of functions:
+
+1. Domain functions offering an interface to a client, hiding the messaging
+   details by dealing with the server process on its own.
+2. Generic functions such as `init/0`, `handle_cast/2`, and `/handle_call/2`,
+   which are used from the server process and deal with messaging.
+
+The `init/0` function provides the initial state to the server process, which
+is just an empty map:
+
+```elixir
+def init do
+  %{}
+end
+```
+
+The `handle_cast/2` function deals with asynchronuous messages:
+
+```elixir
+def handle_cast({:factorize, number}, state) do
+  Map.put(state, number, PrimeFactors.factorize(number))
+end
+```
+
+Messages consisting of the symbol `:factorize` and a number are processed by
+updating the given `state` with the prime factors of the given number. This
+function is run inside the server process. The return value is used as the
+server process's new state, but nothing is returned from the client.
+
+Synchronuous messages are dealt with by the `handle_call/2` function:
+
+```elixir
+def handle_call({:get_result, number}, state) do
+  if Map.has_key?(state, number) do
+    {{:ok, Map.get(state, number)}, state}
+  else
+    {{:err, "no result for #{number}"}, state}
+  end
+end
+```
+
+The client can request a result of a factorization that already happened
+asynchronuously. If the result is contained in the map, its prime factors are
+returned. Otherwise, an error is returned. This interface allows for processing
+the numbers in two phases: First, the numbers to be factorized are submitted
+using asynchronuous cast messages. Second, the results of the factorizations
+are retrieved synchronuously using call messages.
+
+The domain functions provide a convenient interface for that purpose.
+
+The function `start/0` deletages the spawning of a new process to
+`ServerProcess`:
+
+```elixir
+def start do
+  ServerProcess.start(FactorizerCallback)
+end
+```
+
+A number can be submitted for asynchronuous factorization using the
+`factorize/2` function, which expects a PID (of the server process spawned
+using `start/0`) and the number.
+
+```elixir
+def factorize(pid, number) do
+  ServerProcess.cast(pid, {:factorize, number})
+end
+```
+
+The result of a factorization can be retrieved using `get_result/2`, again
+providing a PID and the number for which the result shall be retrieved:
+
+```elixir
+def get_result(pid, number) do
+  ServerProcess.call(pid, {:get_result, number})
+end
+```
+
+## Callback Client
+
+TODO: `FactorizerCallbackClient`
 
 # GenServer Implementation
 
