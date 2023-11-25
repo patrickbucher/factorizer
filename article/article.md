@@ -691,15 +691,16 @@ before the loop is invoked with the updated state.
 ## The Callback Module
 
 The callback module, referred to as `callback_module` from various functions in
-`ServerProcess` is implemented in `FactorizerCallback`. It provides two kinds of functions:
+`ServerProcess` is implemented in `FactorizerCallback`
+(`lib/factorizer_callback.ex`). It provides two kinds of functions:
 
 1. Domain functions offering an interface to a client, hiding the messaging
    details by dealing with the server process on its own.
-2. Generic functions such as `init/0`, `handle_cast/2`, and `/handle_call/2`,
-   which are used from the server process and deal with messaging.
+2. Generic functions `init/0`, `handle_cast/2`, and `/handle_call/2`, which are
+   used from the server process and deal with messaging.
 
 The `init/0` function provides the initial state to the server process, which
-is just an empty map:
+is an empty map:
 
 ```elixir
 def init do
@@ -771,7 +772,12 @@ end
 
 ## Callback Client
 
-TODO: `FactorizerCallbackClient`
+Having a server process dealing with messaging details and a callback module
+providing a domain-specific interface to the concurrent computations, only a
+client is needed making use of those facilities. This client is implemented as
+the module `FactorizerCallbackClient` (`lib/factorizer_callback_client.ex`).
+
+TODO: describe
 
 # GenServer Implementation
 
