@@ -525,7 +525,7 @@ processes incoming messages.) Using that PID, a client can call the
 `factorize/2` function with an additional number to be factorized. A message is
 sent to the respective process, which is then processed in `loop/0` by
 factorizing the number and sending it back with the computed result to the
-caller. The `loop/0` function tail-calls itself to await the next message.
+caller. The `loop/0` function tail calls itself to await the next message.
 
 Note that `start/0` and `factorize/2` run within the client process; only
 `loop/0` runs in the spawned server process. `FactorizerServer` abstracts the
@@ -587,7 +587,6 @@ The performance is comparable to the first concurrent implementation:
 %{
   1000000000 => [2, 2, 2, 2, 2, 2, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5],
   # ...
-  1000000005 => [3, 5, 66666667]
 }
 ```
 
@@ -598,7 +597,7 @@ apparent as more numbers are processed, though.)
 # Callback Implementation
 
 The client/server implementation not only abstracted some messaging details, it
-also introduced long-running processes using a tail-call `loop/0` function. This
+also introduced long-running processes using a tail call `loop/0` function. This
 pattern can be used to introduce state, which is advanced by calling such a
 `loop` function with an updated argument.
 
@@ -638,7 +637,7 @@ end
 
 The initial state is computed in a seperate process, which then continues
 running the loop based on that state. The returned PID is used by the caller to
-call `cast/2` and `call/2` functions:
+invoke `cast/2` and `call/2` functions:
 
 ```elixir
 def cast(server_pid, request) do
@@ -684,14 +683,14 @@ defp loop(callback_module, current_state) do
 
 Both `:cast` and `:call` requests are dealt with by calling the respective
 functions (`handle_cast/2` and `handle_call/2`) on the callback module. However,
-`:cast` messages only advance the state using a tail-call to `loop/2`, whereas
+`:cast` messages only advance the state using a tail call to `loop/2`, whereas
 `:call` messages are also answered with an immediate message back to the caller
 before the loop is invoked with the updated state.
 
 ## The Callback Module
 
 The callback module, referred to as `callback_module` from various functions in
-`ServerProcess` is implemented in `FactorizerCallback`
+`ServerProcess`, is implemented in `FactorizerCallback`
 (`lib/factorizer_callback.ex`). It provides two kinds of functions:
 
 1. Domain functions offering an interface to a client, hiding the messaging
@@ -740,9 +739,11 @@ the numbers in two phases: First, the numbers to be factorized are submitted
 using asynchronuous cast messages. Second, the results of the factorizations
 are retrieved synchronuously using call messages.
 
-The domain functions provide a convenient interface for that purpose.
+The domain functions provide a convenient interface for that purpose. Note that
+handling state is not strictly necessary to solve the problem at hand. However,
+it is handled in a safe way and could be used to implement a caching mechanism.
 
-The function `start/0` deletages the spawning of a new process to
+The function `start/0` delegates the spawning of a new process to
 `ServerProcess`:
 
 ```elixir
@@ -778,38 +779,76 @@ client is needed making use of those facilities. This client is implemented as
 the module `FactorizerCallbackClient` (`lib/factorizer_callback_client.ex`).
 
 As in the other concurrent implementations, the process is handled in the same
-three phases—startup, distribution collection.
+three phases—startup, distribution, and collection. A function `factorize/1` is
+provided again, which is implemented as follows.
 
-First, one server per CPU/scheduler is started, but this time using the
+First, one server per CPU/scheduler is started; this time using the
 `FactorizerCallback` module:
 
 ```elixir
-# TODO
+pids_by_index =
+  Enum.reduce(0..(System.schedulers_online() - 1), %{}, fn i, acc ->
+    Map.put(acc, i, FactorizerCallback.start())
+  end)
 ```
 
 Second, the work is distributed to the processes using round robin scheduling
-and the asynchronuous `factorize/2` function, and the pids are stored as the
+and the asynchronuous `factorize/2` function, and the PIDs are stored as the
 values in a map, indexed by the numbers they compute. Again, the
 `FactorizerCallback` module is used, which hides the messaging details:
 
 ```elixir
-# TODO
+result =
+  Enum.reduce(numbers, {0, %{}}, fn number, {i, acc} ->
+    pid = Map.get(pids_by_index, rem(i, System.schedulers_online()))
+    FactorizerCallback.factorize(pid, number)
+    {i + 1, Map.put(acc, number, pid)}
+  end)
+
+pids_by_number = elem(result, 1)
 ```
 
-Third, The results are collected into a map using the synchronuous
+Third, the results are collected into a map using the synchronuous
 `get_result/2` function. A simple error handling mechanism is implemented,
 sending potential errors to the standard output:
 
 ```elixir
-# TODO
+Enum.reduce(pids_by_number, %{}, fn {number, pid}, acc ->
+  result = FactorizerCallback.get_result(pid, number)
+
+  case result do
+    {:ok, factors} -> Map.put(acc, number, factors)
+    {:err, msg} -> IO.puts(msg)
+  end
+end)
 ```
 
-This code is not shorter, but devoid of any messaging or other
-concurrency-related concerns, which are all abstracted by the
+This code is not shorter compared to the preceeding concurrent implementation,
+but devoid of any message handling, which is all dealt with in  the
 `FactorizerCallback` module working tightly together with the `ServerProcess`
 module.
 
-TODO: example call, timings, etc.
+Actually, `FactorizerCallbackClient.factorize/1` is slightly longer and more
+involved than `FactorizerClient.factorize/1`, _because_ the messaging details
+are abstracted away by `ServerProcess`: Instead of awaiting messages arriving at
+the controlling process's letterbox, the spawned PIDs have to kept track of in
+order to receive results from their computations synchronuously. (This is
+somewhat closer to implementations common to Go's concurrency model, in which
+results are expected from particular processes or channels.)
+
+Performance is hardly affected by the communication overhead of the two modules
+`ServerProcess` and `FactorizerCallback` working tightly together:
+
+```elixir
+> Stopwatch.timed(
+    fn -> FactorizerCallbackClient.factorize(1_000_000_000..1_000_000_005)
+  end)
+0.648022s
+%{
+  1000000000 => [2, 2, 2, 2, 2, 2, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+  # ...
+}
+```
 
 # GenServer Implementation
 
