@@ -869,6 +869,12 @@ TODO: overview table
 
 TODO: some lofty thoughts
 
-# Sources
+# Sources and Links
 
-Saša Jurić: _Elixir in Action_ (Second Edition), Manning 2019, ISBN-13: 9781617295027
+Saša Jurić: _Elixir in Action_ (Second Edition), Manning 2019,
+ISBN-13: 9781617295027. This article describes an extended example for the
+mechanisms being explained in chapters 5 and 6 in this very well-written book.
+(Its third edition will be released soon.)
+
+[factorizer](https://github.com/patrickbucher/factorizer): This Git repository
+contains both the executable code as a `mix` project and this article.
