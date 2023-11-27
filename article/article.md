@@ -852,7 +852,97 @@ Performance is hardly affected by the communication overhead of the two modules
 
 # GenServer Implementation
 
-TODO: use GenServer instead of hand-made callback structure
+The `ServerProcess` module discussed above is so generic that Elixir actually
+provides it as a module called `GenServer` (generic server), which is one of
+many _OTP Behaviours_. Instead of writing a `ServerProcess` on one's own, a
+callback module implementing the functions `init/1`, `handle_cast/2`, and
+`handle_call/2` can simply make use of the `GenServer`, as it is done in the
+`GenFactorizer` module (`lib/gen_factorizer.ex`):
+
+```elixir
+defmodule GenFactorizer do
+  use GenServer
+  # ...
+end
+```
+
+The `init/1` function provides the initial state:
+
+```elixir
+@impl GenServer
+def init(_) do
+  {:ok, %{}}
+end
+```
+
+Note that `init` expects an argument, which is ignored in this implementation.
+The response is also tagged with the symbol `:ok`, which is a requirement of the
+`GenServer` behaviour. The `@impl` module attribute ensures compliance with
+`GenServer` by emitting warnings at compile time.
+
+Asynchronuous messages are handled by `handle_cast/2`:
+
+```elixir
+@impl GenServer
+def handle_cast({:factorize, number}, state) do
+  {:noreply, Map.put(state, number, PrimeFactors.factorize(number))}
+end
+```
+
+This implementation is almost identical to the one provided by
+`FactorizerCallback` further above, but the new state is also tagged with a
+symbol (here: `:noreply`).
+
+Synchronuous messages handled by `handle_call/2` look similar to the last
+implementation, too:
+
+```elixir
+@impl GenServer
+def handle_call({:get_result, number}, _, state) do
+  if Map.has_key?(state, number) do
+    {:reply, {:ok, Map.get(state, number)}, state}
+  else
+    {:reply, {:err, "no result for #{number}"}, state}
+  end
+end
+```
+
+The second argument, which is not used in this example, can be used to identify
+the caller process and the message, as described in the [API
+documentation](https://hexdocs.pm/elixir/1.15/GenServer.html#c:handle_call/3).
+Once more, the result is tagged with a symbol (here: `:reply`).
+
+So much for the callback methods, which all are annotated with a `@impl
+GenServer` module attribute and annotate their return values with a symbol.
+
+The other part of `GenFactorizer` provides the API for the client. This
+implementation is almost identical to the one provided by `FactorizerCallback`:
+
+```elixir
+def start do
+  GenServer.start(__MODULE__, nil)
+end
+
+def factorize(pid, number) do
+  GenServer.cast(pid, {:factorize, number})
+end
+
+def get_result(pid, number) do
+  GenServer.call(pid, {:get_result, number})
+end
+```
+
+The `start/0` function provides the current module's name to `GenServer.start/2`
+using `__MODULE__` instead of spelling out its own module name, which allows for
+more convenient renaming of the module `GenFactorizer`, since the name must only
+be changed at a single place. A second argument required by `GenServer.start/2`
+is just given as `nil`.
+
+The client, implemented as `GenFactorizerClient`
+(`lib/gen_factorizer_client.ex`), is almost identical to the
+`FactorizerCallbackClient` discussed above. The only difference is that the
+former makes use of the callback module `GenFactorizer` while the latter uses
+the `FactorizerCallback` module.
 
 # Timings
 
