@@ -8,7 +8,7 @@ defmodule GenFactorizerClient do
 
     result =
       Enum.reduce(numbers, {0, %{}}, fn number, {i, acc} ->
-        pid = Map.get(pids_by_index, rem(i, scheds))
+        pid = Map.get(pids_by_index, rem(i, System.schedulers_online()))
         GenFactorizer.factorize(pid, number)
         {i + 1, Map.put(acc, number, pid)}
       end)
