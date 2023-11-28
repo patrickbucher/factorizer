@@ -928,7 +928,7 @@ def factorize(pid, number) do
 end
 
 def get_result(pid, number) do
-  GenServer.call(pid, {:get_result, number})
+  GenServer.call(pid, {:get_result, number}, 10_000)
 end
 ```
 
@@ -936,7 +936,9 @@ The `start/0` function provides the current module's name to `GenServer.start/2`
 using `__MODULE__` instead of spelling out its own module name, which allows for
 more convenient renaming of the module `GenFactorizer`, since the name must only
 be changed at a single place. A second argument required by `GenServer.start/2`
-is just given as `nil`.
+is just given as `nil`. Note that `GenServer.call/3` is used, i.e. with an
+additional timeout argument, which is set to ten seconds. If the answer doesn't
+arrive within that timeout, an error is raised.
 
 The client, implemented as `GenFactorizerClient`
 (`lib/gen_factorizer_client.ex`), is almost identical to the
@@ -946,18 +948,26 @@ the `FactorizerCallback` module.
 
 # Timings
 
-The four implementations of prime factorization—one non-concurrent, three
+The five implementations of prime factorization—one non-concurrent, four 
 concurrent—are tested with numbers from $10^9$ upwards using the
 `Stopwatch.timed/1` function. The results are not proper benchmarks, but give a
-rough idea on the relative performance of the four different implementations
-(rows) when used for factorizing $n$ numbers (columns).
+rough idea on the relative performance of the five different implementations
+(rows) when used for factorizing $n$ numbers (columns):
 
-|               | 1 | 10 | 100 | 1000 |
-|---------------|--:|---:|----:|-----:|
-| Basic         |   |    |     |      |
-| Parallel      |   |    |     |      |
-| Client/Server |   |    |     |      |
-| GenServer     |   |    |     |      |
+|               |      1 |     10 |    100 |
+|---------------|-------:|-------:|-------:|
+| Basic         | $0.41$ | $3.87$ | $39.0$ |
+| Parallel      | $0.39$ | $0.99$ | $10.7$ |
+| Client/Server | $0.39$ | $1.15$ | $9.02$ |
+| Callback      | $0.39$ | $1.14$ | $9.05$ |
+| GenServer     | $0.39$ | $1.14$ | $9.09$ |
+
+The benchmarks have been executed on a AMD Ryzen 5 PRO 3400GE CPU (four
+cores, eight threads). Besides the expected four-fold speedup between the basic
+implementation on one hand and the parallel implementations on the other hand,
+there's also a speedup between the first parallel implementation (spawning one
+process per number) and the three others (working with a process pool; one
+process per scheduler).
 
 # Conclusion
 

@@ -10,7 +10,7 @@ defmodule GenFactorizer do
   end
 
   def get_result(pid, number) do
-    GenServer.call(pid, {:get_result, number})
+    GenServer.call(pid, {:get_result, number}, 10_000)
   end
 
   @impl GenServer
