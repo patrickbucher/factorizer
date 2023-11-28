@@ -9,10 +9,10 @@ _Actor Model_, is quite similar to the model used in Go, which is called
 _Communicating Sequential Processes_. There are many things in common, indeed:
 
 - Both Elixir's (or Erlang's) _processes_ and Go's _goroutines_ are
-  light-weight. It's practical to have hundreds or even thousands of them, which
-  are mapped to operating system threads in a _n:m_ manner (_n_ OS threads
-  running _m_ processes/goroutines).
-- Both models facilitate message passing between concurrent units of executions
+  light-weight. It's practical to have hundreds or even thousands of them
+  running, which are mapped to operating system threads in a _n:m_ manner (_n_
+  OS threads running _m_ processes/goroutines).
+- Both models facilitate message passing between concurrent units of execution
   (processes/goroutines).
 - Both languages offer language constructs for dealing with incoming messages:
   `receive` in Elixir, `select/case` and the arrow operator `<-` in Go.
@@ -26,12 +26,13 @@ model like Java, for that matter) to Elixir struggle:
 - Elixir's `spawn/1` function starts a new process and returns a process
   identifier (PID), whereas Go's `go` keyword creates and starts a new goroutine
   and returns nothing.
-- Knowing a process' PID is sufficient to send it a message in Elixir, whereas
+- Knowing a process's PID is sufficient to send it a message in Elixir, whereas
   in Go channels known to both goroutines are required for communication between
   them.
 - As a consequence, a goroutine can wait for a message from a specific channel
   (possibly only known to another specific goroutine), whereas in Elixir a
-  process can just wait for any incoming message being sent from any process.
+  process can just wait for any incoming message being sent from any other
+  process.
 - Implementing a message loop in Elixir requires (tail) recursion, whereas Go
   uses (infinite) loops.
 - Being a dynamically typed language, incoming messages are matched against
@@ -50,12 +51,12 @@ few examples:
 
 | Number | Prime Factors |                                 Check |
 |-------:|--------------:|--------------------------------------:|
-|     12 |       2, 2, 3 |            $2 \times 2 \times 3 = 12$ |
-|     13 |            13 |                             $13 = 13$ |
-|     24 |    2, 2, 2, 3 |   $2 \times 2 \times 2 \times 3 = 24$ |
-|     30 |       2, 3, 5 |            $2 \times 3 \times 5 = 30$ |
-|    140 |    2, 2, 5, 7 |  $2 \times 2 \times 5 \times 7 = 140$ |
-|    580 |   2, 2, 5, 29 | $2 \times 2 \times 5 \times 29 = 580$ |
+|   $12$ |     $2, 2, 3$ |            $2 \times 2 \times 3 = 12$ |
+|   $13$ |          $13$ |                             $13 = 13$ |
+|   $24$ |  $2, 2, 2, 3$ |   $2 \times 2 \times 2 \times 3 = 24$ |
+|   $30$ |     $2, 3, 5$ |            $2 \times 3 \times 5 = 30$ |
+|  $140$ |  $2, 2, 5, 7$ |  $2 \times 2 \times 5 \times 7 = 140$ |
+|  $580$ | $2, 2, 5, 29$ | $2 \times 2 \times 5 \times 29 = 580$ |
 
 Factorizing a number into its prime factors is useful for arithmetics (finding
 the greatest common divisor of two numbers, canceling fractions) or for
@@ -155,7 +156,7 @@ is stated in the negative: If `n` is divisible without a remainder by _any_
 smaller prime number, it is _not_ a prime number. The successor of `n` shall be
 retried in this case, without extending the accumulator, since no new prime
 number was found. If none of the prime numbers divides `n` without a remainder,
-`n` is a prime number, which is both returned as the next element of the stream,
+`n` is a prime number, which is both returned as the next element of the stream
 and as the head of the updated accumulator.
 
 Why is a number $n$ only checked for divisability by _prime_ numbers $p < n$ and
@@ -163,10 +164,11 @@ not by _all_ numbers $m < n$? Because if $n$ is not divisible by $m$, it won't
 be divisible by $m^2$. E.g. if $13$ is not divisible by $2$, how could it be
 divisible by $4=2^2$, which is the same as being divisible by $2$ _twice_?
 
-A further optimisation would be to filter `primes` to $p <= \frac{n}{2}$,
+A further optimization would be to filter `primes` to $p <= \frac{n}{2}$,
 because no $p > \frac{n}{2}$ could divide $n$ such that the result would be a
 natural number (e.g. $13 \div 7 < 1$). This is left as an exercise to the
-reader. (Note that `primes` is built up in _descending_ order.)
+reader. (Note that `primes` is built up in _descending_ order, i.e. new elements
+are added at the head.)
 
 For the public API of the `PrimeSieve` module, the following functions are
 offered:
@@ -265,8 +267,8 @@ call.
 
 In the first case (success), the first argument `n` is reduced towards 1; in the
 second case (failure), the second argument (prime numbers) is reduced towards
-the empty list. So both cases are reduced to one of the two base cases explained
-above.
+the empty list. So both cases are reduced towards one of the two base cases
+explained above.
 
 The `PrimeFactors.factorize/1` function can be used as follows in `iex`:
 
@@ -285,8 +287,7 @@ The result can be checked by multiplying the found prime factors:
 ## Stopwatch
 
 In order to measure the running times of prime number factorization (or some
-other arbitrary code, for that matter), the `Stopwatch` module
-(`lib/stopwatch.ex`) is provided:
+other arbitrary code), the `Stopwatch` module (`lib/stopwatch.ex`) is provided:
 
 ```elixir
 defmodule Stopwatch do
@@ -319,9 +320,9 @@ benchmarks.)
 # Basic Implementation
 
 Having the building blocks (finding prime numbers, factorizing a single number)
-together, an first implementation for the problem initially stated can be
-provided: the module `Factorizer` (`lib/factorizer.ex`), which provides the
-function `factorize/1`:
+together, a first implementation for the problem initially stated is provided as
+the module `Factorizer` (`lib/factorizer.ex`), which provides the function
+`factorize/1`:
 
 ```elixir
 defmodule Factorizer do
@@ -336,13 +337,13 @@ end
 
 The function `factorize/1` expects a single argument, which is a sequence of
 unique numbers. These numbers are factorized using `PrimeFactors.factorize/1`,
-which was in the section before. Each operation, which is performed using
+explained in the section before. Each operation, which is performed using
 `Enum.map/2`, returns a tuple consisting of the original number as the first
 element, and the prime factors found as the second element. Those results are
 transformed into a map with the original numbers as its keys and the found
 factors as the values.
 
-The module can be used as follows (e.g. with literal lists or ranges):
+The module can be used as follows (e.g. with list literals or ranges):
 
 ```elixir
 > Factorizer.factorize([10, 20, 30])
@@ -363,7 +364,7 @@ Factorizing a couple of big numbers in the range of $10^9$ now takes
 considerable time:
 
 ```elixir
-Stopwatch.timed(fn -> Factorizer.factorize(1_000_000_000..1_000_000_005) end)
+> Stopwatch.timed(fn -> Factorizer.factorize(1_000_000_000..1_000_000_005) end)
 2.40538s
 %{
   1000000000 => [2, 2, 2, 2, 2, 2, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5],
@@ -468,8 +469,8 @@ the `factorize/1` function.
 The first two steps (spawning processes and distributing the work to them)
 could have been handled within a single iteration instead of the two being
 performed in the implementation just described. However, the separation into two
-phases makes the conceptual phases more congruent with the actual runtime
-phases.
+phases makes the conceptual phases more congruent with the layout of the code
+and its actual execution.
 
 The computation has been sped up considerably:
 
@@ -525,7 +526,7 @@ processes incoming messages.) Using that PID, a client can call the
 `factorize/2` function with an additional number to be factorized. A message is
 sent to the respective process, which is then processed in `loop/0` by
 factorizing the number and sending it back with the computed result to the
-caller. The `loop/0` function tail calls itself to await the next message.
+caller. The `loop/0` function calls itself to await the next message.
 
 Note that `start/0` and `factorize/2` run within the client process; only
 `loop/0` runs in the spawned server process. `FactorizerServer` abstracts the
@@ -833,8 +834,8 @@ involved than `FactorizerClient.factorize/1`, _because_ the messaging details
 are abstracted away by `ServerProcess`: Instead of awaiting messages arriving at
 the controlling process's letterbox, the spawned PIDs have to kept track of in
 order to receive results from their computations synchronuously. (This is
-somewhat closer to implementations common to Go's concurrency model, in which
-results are expected from particular processes or channels.)
+somewhat closer to implementations using to Go's concurrency model, in which
+results are expected from particular channels.)
 
 Performance is hardly affected by the communication overhead of the two modules
 `ServerProcess` and `FactorizerCallback` working tightly together:
@@ -853,11 +854,11 @@ Performance is hardly affected by the communication overhead of the two modules
 # GenServer Implementation
 
 The `ServerProcess` module discussed above is so generic that Elixir actually
-provides it as a module called `GenServer` (generic server), which is one of
-many _OTP Behaviours_. Instead of writing a `ServerProcess` on one's own, a
-callback module implementing the functions `init/1`, `handle_cast/2`, and
-`handle_call/2` can simply make use of the `GenServer`, as it is done in the
-`GenFactorizer` module (`lib/gen_factorizer.ex`):
+provides such a module called `GenServer` (generic server), which is one of many
+_OTP Behaviours_. Instead of writing a `ServerProcess` on one's own, a callback
+module implementing the functions `init/1`, `handle_cast/2`, and `handle_call/2`
+can simply make use of the `GenServer`, as it's done in the `GenFactorizer`
+module (`lib/gen_factorizer.ex`):
 
 ```elixir
 defmodule GenFactorizer do
@@ -953,8 +954,8 @@ concurrent—are tested with numbers from $10^9$ upwards using the
 `Stopwatch.timed/1` function. The rows denote the implementations discussed
 above; the columns denote the amount of numbers tested. The benchmarks have been
 executed on a AMD Ryzen 5 PRO 3400GE CPU (four cores, eight threads). The
-results are not proper benchmarks, but should give a rough idea on the relative
-performance of those implementations:
+results are not proper benchmarks, but should give a rough idea about the
+relative performance of those implementations:
 
 | Implementation/$n$ |    $1$ |   $10$ |  $100$ |
 |--------------------|-------:|-------:|-------:|
@@ -967,40 +968,40 @@ performance of those implementations:
 Besides the expected four-fold speedup between the basic implementation on one
 hand and the parallel implementations on the other hand, there's also a speedup
 between the first parallel implementation (spawning one process per number) and
-the three others (working with a process pool; one process per scheduler).
+the three others (working with a process pool; one process per scheduler), as
+$n$ increases.
 
 # Conclusion
 
 It has been shown how a computationally expensive task can be sped up by
-applying Elixir's concurrency features to the problem at hand. The solution has
-further been refined by separating the concerns—providing facilities for
-concurrent computations and making use of them. Furthermore, the solution was
-adapted to Elixir's built-in OTP facilities, which provide benefits far beyond
-in what has been discussed in these pages.
+applying Elixir's concurrency features to the problem of prime factorization.
+The solution has further been refined by separating the concerns—providing
+facilities for concurrent computations and making use of them. Furthermore, the
+solution was adapted to Elixir's built-in OTP facilities, which provide benefits
+far beyond what has been discussed in these pages.
 
 However, one has to keep in mind that using convenient concurrency features in
-combination with the computing power of modern multi-core machines is not
-sufficient or not even appropriate for every problem. In this example, the
-_same_ prime numbers are computed time and again—efficiently, but redundantly.
-Exposing the stream of prime numbers to the clients or implementing a module for
-prime number computation using memoization would arguably cause a speedup
-comparable to the one gained from using concurrency.
+combination with the computing power of multi-core machines is not sufficient
+and maybe not appropriate for every problem. In this example, the _same_ prime
+numbers are computed time and again: concurrently, in parallel—and redundantly.
+Exposing the stream of prime numbers for consumption upon factorization or
+implementing a memoization mechanism for prime numbers would arguably cause an
+additional speedup to to the one gained from using concurrency features.
 
 Implementing a stateful process for finding prime numbers to avoid redundant
 computations is left as an exercise to the reader. Applying concurrency is not
-enough; one has to apply it at the proper place(s).
+enough; one has to apply it at the proper place and in the right way.
 
 # Sources and Links
 
-Saša Jurić: _Elixir in Action_ (Second Edition), Manning 2019,
-ISBN-13: 9781617295027. This article describes an extended example for the
-mechanisms being explained in chapters 5 and 6 in this very well-written book.
-(Its third edition will be released soon.)
+- [Factorizer](https://github.com/patrickbucher/factorizer) (Git Repository),
+  containing both the executable code and this article
+- Saša Jurić: _Elixir in Action_ (Second Edition), Manning 2019, ISBN-13: 9781617295027.
+  This article describes an extended example for the mechanisms being explained
+  in the chapters 5 and 6 in this instructive book. (Its third edition will be
+  released soon.)
 
-[factorizer](https://github.com/patrickbucher/factorizer): This Git repository
-contains both the executable code as a `mix` project and this article.
-
-When referring to "Elixir's concurrency features", as done many times in the
-text above, most of the credit goes to Erlang/OTP. Credit for providing a
-convenient and attractive programming language on top of Erlang/OTP goes to the
-Elixir team.
+When referring to "Elixir's concurrency features", as done many times in this
+text, most of the credit goes to Erlang/OTP. Credit for providing a convenient
+and attractive programming language on top of Erlang/OTP goes to the Elixir
+team.
