@@ -950,24 +950,24 @@ the `FactorizerCallback` module.
 
 The five implementations of prime factorization—one non-concurrent, four 
 concurrent—are tested with numbers from $10^9$ upwards using the
-`Stopwatch.timed/1` function. The results are not proper benchmarks, but give a
-rough idea on the relative performance of the five different implementations
-(rows) when used for factorizing $n$ numbers (columns):
+`Stopwatch.timed/1` function. The rows denote the implementations discussed
+above; the columns denote the amount of numbers tested. The benchmarks have been
+executed on a AMD Ryzen 5 PRO 3400GE CPU (four cores, eight threads). The
+results are not proper benchmarks, but should give a rough idea on the relative
+performance of those implementations:
 
-|               |      1 |     10 |    100 |
-|---------------|-------:|-------:|-------:|
-| Basic         | $0.41$ | $3.87$ | $39.0$ |
-| Parallel      | $0.39$ | $0.99$ | $10.7$ |
-| Client/Server | $0.39$ | $1.15$ | $9.02$ |
-| Callback      | $0.39$ | $1.14$ | $9.05$ |
-| GenServer     | $0.39$ | $1.14$ | $9.09$ |
+| Implementation/$n$ |    $1$ |   $10$ |  $100$ |
+|--------------------|-------:|-------:|-------:|
+| Basic              | $0.41$ | $3.87$ | $39.0$ |
+| Parallel           | $0.39$ | $0.99$ | $10.7$ |
+| Client/Server      | $0.39$ | $1.15$ | $9.02$ |
+| Callback           | $0.39$ | $1.14$ | $9.05$ |
+| GenServer          | $0.39$ | $1.14$ | $9.09$ |
 
-The benchmarks have been executed on a AMD Ryzen 5 PRO 3400GE CPU (four
-cores, eight threads). Besides the expected four-fold speedup between the basic
-implementation on one hand and the parallel implementations on the other hand,
-there's also a speedup between the first parallel implementation (spawning one
-process per number) and the three others (working with a process pool; one
-process per scheduler).
+Besides the expected four-fold speedup between the basic implementation on one
+hand and the parallel implementations on the other hand, there's also a speedup
+between the first parallel implementation (spawning one process per number) and
+the three others (working with a process pool; one process per scheduler).
 
 # Conclusion
 
