@@ -946,7 +946,11 @@ the `FactorizerCallback` module.
 
 # Timings
 
-TODO: overview table
+The four implementations of prime factorization—one non-concurrent, three
+concurrent—are tested with numbers from $10^9$ upwards using the
+`Stopwatch.timed/1` function. The results are not proper benchmarks, but give a
+rough idea on the relative performance of the four different implementations
+(rows) when used for factorizing $n$ numbers (columns).
 
 |               | 1 | 10 | 100 | 1000 |
 |---------------|--:|---:|----:|-----:|
