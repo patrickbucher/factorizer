@@ -971,7 +971,24 @@ the three others (working with a process pool; one process per scheduler).
 
 # Conclusion
 
-TODO: some lofty thoughts
+It has been shown how a computationally expensive task can be sped up by
+applying Elixir's concurrency features to the problem at hand. The solution has
+further been refined by separating the concerns—providing facilities for
+concurrent computations and making use of them. Furthermore, the solution was
+adapted to Elixir's built-in OTP facilities, which provide benefits far beyond
+in what has been discussed in these pages.
+
+However, one has to keep in mind that using convenient concurrency features in
+combination with the computing power of modern multi-core machines is not
+sufficient or not even appropriate for every problem. In this example, the
+_same_ prime numbers are computed time and again—efficiently, but redundantly.
+Exposing the stream of prime numbers to the clients or implementing a module for
+prime number computation using memoization would arguably cause a speedup
+comparable to the one gained from using concurrency.
+
+Implementing a stateful process for finding prime numbers to avoid redundant
+computations is left as an exercise to the reader. Applying concurrency is not
+enough; one has to apply it at the proper place(s).
 
 # Sources and Links
 
@@ -982,3 +999,8 @@ mechanisms being explained in chapters 5 and 6 in this very well-written book.
 
 [factorizer](https://github.com/patrickbucher/factorizer): This Git repository
 contains both the executable code as a `mix` project and this article.
+
+When referring to "Elixir's concurrency features", as done many times in the
+text above, most of the credit goes to Erlang/OTP. Credit for providing a
+convenient and attractive programming language on top of Erlang/OTP goes to the
+Elixir team.
