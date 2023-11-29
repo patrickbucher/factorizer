@@ -1,7 +1,7 @@
 ---
 title: 'Concurrent Prime Factorization'
 subtitle: 'A Go Programmer Learns Elixir Concurrency'
-author: 'Patrick Bucher'
+author: 'Patrick Bucher, Composed GmbH'
 ---
 
 The concurrency model used in Elixir (and Erlang), often referred to as the
@@ -9,7 +9,7 @@ _Actor Model_, is quite similar to the model used in Go, which is called
 _Communicating Sequential Processes_. There are many things in common, indeed:
 
 - Both Elixir's (or Erlang's) _processes_ and Go's _goroutines_ are
-  light-weight. It's practical to have hundreds or even thousands of them
+  lightweight. It's practical to have hundreds or even thousands of them
   running, which are mapped to operating system threads in a _n:m_ manner (_n_
   OS threads running _m_ processes/goroutines).
 - Both models facilitate message passing between concurrent units of execution
@@ -26,9 +26,9 @@ model like Java, for that matter) to Elixir struggle:
 - Elixir's `spawn/1` function starts a new process and returns a process
   identifier (PID), whereas Go's `go` keyword creates and starts a new goroutine
   and returns nothing.
-- Knowing a process's PID is sufficient to send it a message in Elixir, whereas
-  in Go channels known to both goroutines are required for communication between
-  them.
+- Knowing a process's PID is sufficient to send a message to it in Elixir,
+  whereas in Go channels known to both goroutines are required for communication
+  between them.
 - As a consequence, a goroutine can wait for a message from a specific channel
   (possibly only known to another specific goroutine), whereas in Elixir a
   process can just wait for any incoming message being sent from any other
@@ -97,16 +97,16 @@ well suited for a case study in CPU-bound concurrency.
 
 # Building Blocks
 
-First, the algorithm described in the section above shall be implemented in a
-new Elixir project, which is created using the `mix` tool (using Elixir
-v1.15.7):
+The algorithm described in the section above shall be implemented in a new
+Elixir project, which is created using the `mix` tool (using Elixir version
+1.15.7):
 
     $ mix new factorizer
 
 This creates a scaffold in the folder `factorizer/` with source code files in
 the `lib/` sub-folder, and test cases in `test/`. A module called `Factorizer`
 is already provided in `lib/factorizer.ex`, which shall be implemented right
-after the next step.
+after the building blocks have been provided in the next step.
 
 ## Prime Sieve (of Eratosthenes)
 
@@ -168,7 +168,7 @@ A further optimization would be to filter `primes` to $p <= \frac{n}{2}$,
 because no $p > \frac{n}{2}$ could divide $n$ such that the result would be a
 natural number (e.g. $13 \div 7 < 1$). This is left as an exercise to the
 reader. (Note that `primes` is built up in _descending_ order, i.e. new elements
-are added at the head.)
+are added at its head.)
 
 For the public API of the `PrimeSieve` module, the following functions are
 offered:
@@ -267,8 +267,8 @@ call.
 
 In the first case (success), the first argument `n` is reduced towards 1; in the
 second case (failure), the second argument (prime numbers) is reduced towards
-the empty list. So both cases are reduced towards one of the two base cases
-explained above.
+the empty list. So in every step, both cases are reduced towards one of the two
+base cases explained above.
 
 The `PrimeFactors.factorize/1` function can be used as follows in `iex`:
 
@@ -381,10 +381,10 @@ allows for parallel execution on a machine with multiple CPUs.
 
 # Basic Parallel Implementation
 
-The `Factorizer` module shall be rewritten using Elixir concurrency primitives
+The `Factorizer` module shall be rewritten using Elixir's concurrency primitives
 in order to speed up the process on a computer with multiple CPUs. In contrast
-to the short and simple solution from above, the computation is handled in
-multiple stages:
+to the short and simple solution from above, the concurrent computation is
+handled in multiple stages:
 
 1. _Startup_: Multiple processes are spawned, one per number to be processed.
 2. _Distribution_: The numbers to be factorized are distributed to the running
@@ -410,9 +410,9 @@ pids_by_number =
 
 The processes are spawned from the `Enum.map/2` higher-order function, which
 returns a tuple for every number processed consisting of the original number and
-a PID of the process that has been spawned to process said number. The resulting
-enumeration of tuples is converted to a map, which allows for lookups of
-processes by numbers.
+a PID of the process that has been spawned to factorize said number. The
+resulting enumeration of tuples is converted to a map, which allows for lookups
+of processes by numbers.
 
 The `spawn/1` function, which starts a child process, expects a function to be
 run concurrently. Here, the `handle/1` function is passed, which is defined as
@@ -443,8 +443,8 @@ end)
 ```
 
 The map of PIDs by number is now processed. A message consisting of the main
-process's PID (accessed using the `self/0` function) and the number to be
-factorized is sent over to the respective process.
+process's PID (accessed using the `self/0` function), to which responses shall
+be sent, and the number to be factorized is sent over to the respective process.
 
 The work is now distributed, and the main process will receive their results in
 the order of their computation:
@@ -458,7 +458,7 @@ end)
 ```
 
 The `Enum.reduce/3` higher-order function is used to process the numbers.
-However, the numbers themselves are not even of interest: It is only important
+However, the numbers themselves are not even of interest: It's only important
 that one message per number is received. The reduction starts with the empty map
 `%{}` to be used as the accumulator (`acc`), which is filled with the incoming
 results. For every message that is received—consisting of the original number
@@ -523,9 +523,9 @@ end
 The server process is created using the `start/0` function, which spawns a new
 process and returns its PID. (The server runs the `loop/0` function, which
 processes incoming messages.) Using that PID, a client can call the
-`factorize/2` function with an additional number to be factorized. A message is
-sent to the respective process, which is then processed in `loop/0` by
-factorizing the number and sending it back with the computed result to the
+`factorize/2` function with an additional argument: the number to be factorized.
+A message is sent to the respective process, which is then processed in `loop/0`
+by factorizing the number and sending it back with the computed result to the
 caller. The `loop/0` function calls itself to await the next message.
 
 Note that `start/0` and `factorize/2` run within the client process; only
@@ -742,7 +742,8 @@ are retrieved synchronuously using call messages.
 
 The domain functions provide a convenient interface for that purpose. Note that
 handling state is not strictly necessary to solve the problem at hand. However,
-it is handled in a safe way and could be used to implement a caching mechanism.
+it is handled in a safe way and could be used to implement a caching mechanism
+later on.
 
 The function `start/0` delegates the spawning of a new process to
 `ServerProcess`:
@@ -795,7 +796,7 @@ pids_by_index =
 
 Second, the work is distributed to the processes using round robin scheduling
 and the asynchronuous `factorize/2` function, and the PIDs are stored as the
-values in a map, indexed by the numbers they compute. Again, the
+values in a map, indexed by the numbers they factorize. Again, the
 `FactorizerCallback` module is used, which hides the messaging details:
 
 ```elixir
@@ -853,12 +854,12 @@ Performance is hardly affected by the communication overhead of the two modules
 
 # GenServer Implementation
 
-The `ServerProcess` module discussed above is so generic that Elixir actually
+The `ServerProcess` module just discussed is so generic that Elixir actually
 provides such a module called `GenServer` (generic server), which is one of many
-_OTP Behaviours_. Instead of writing a `ServerProcess` on one's own, a callback
-module implementing the functions `init/1`, `handle_cast/2`, and `handle_call/2`
-can simply make use of the `GenServer`, as it's done in the `GenFactorizer`
-module (`lib/gen_factorizer.ex`):
+so-called _OTP Behaviours_. Instead of writing a `ServerProcess` on one's own, a
+callback module implementing the functions `init/1`, `handle_cast/2`, and
+`handle_call/2` can simply make use of `GenServer`, as it's done in the
+`GenFactorizer` module (`lib/gen_factorizer.ex`):
 
 ```elixir
 defmodule GenFactorizer do
@@ -914,7 +915,7 @@ documentation](https://hexdocs.pm/elixir/1.15/GenServer.html#c:handle_call/3).
 Once more, the result is tagged with a symbol (here: `:reply`).
 
 So much for the callback methods, which all are annotated with a `@impl
-GenServer` module attribute and annotate their return values with a symbol.
+GenServer` module attribute and decorate their return values with a symbol.
 
 The other part of `GenFactorizer` provides the API for the client. This
 implementation is almost identical to the one provided by `FactorizerCallback`:
@@ -957,36 +958,37 @@ executed on a AMD Ryzen 5 PRO 3400GE CPU (four cores, eight threads). The
 results are not proper benchmarks, but should give a rough idea about the
 relative performance of those implementations:
 
-| Implementation/$n$ |    $1$ |   $10$ |  $100$ |
-|--------------------|-------:|-------:|-------:|
-| Basic              | $0.41$ | $3.87$ | $39.0$ |
-| Parallel           | $0.39$ | $0.99$ | $10.7$ |
-| Client/Server      | $0.39$ | $1.15$ | $9.02$ |
-| Callback           | $0.39$ | $1.14$ | $9.05$ |
-| GenServer          | $0.39$ | $1.14$ | $9.09$ |
+| Implementation / $n$ |    $1$ |   $10$ |  $100$ |
+|----------------------|-------:|-------:|-------:|
+| Basic                | $0.41$ | $3.87$ | $39.0$ |
+| Parallel             | $0.39$ | $0.99$ | $10.7$ |
+| Client/Server        | $0.39$ | $1.15$ | $9.02$ |
+| Callback             | $0.39$ | $1.14$ | $9.05$ |
+| GenServer            | $0.39$ | $1.14$ | $9.09$ |
 
 Besides the expected four-fold speedup between the basic implementation on one
 hand and the parallel implementations on the other hand, there's also a speedup
 between the first parallel implementation (spawning one process per number) and
-the three others (working with a process pool; one process per scheduler), as
-$n$ increases.
+the three others (working with a process pool; one process per scheduler) as $n$
+increases.
 
 # Conclusion
 
 It has been shown how a computationally expensive task can be sped up by
 applying Elixir's concurrency features to the problem of prime factorization.
 The solution has further been refined by separating the concerns—providing
-facilities for concurrent computations and making use of them. Furthermore, the
-solution was adapted to Elixir's built-in OTP facilities, which provide benefits
-far beyond what has been discussed in these pages.
+facilities for concurrent computations and domain-specific code for making use
+of them. Furthermore, the solution was adapted to Elixir's built-in OTP
+facilities, which provide benefits far beyond what has been discussed in these
+pages.
 
 However, one has to keep in mind that using convenient concurrency features in
 combination with the computing power of multi-core machines is not sufficient
 and maybe not appropriate for every problem. In this example, the _same_ prime
 numbers are computed time and again: concurrently, in parallel—and redundantly.
-Exposing the stream of prime numbers for consumption upon factorization or
-implementing a memoization mechanism for prime numbers would arguably cause an
-additional speedup to to the one gained from using concurrency features.
+Using the exposed stream of prime numbers for consumption upon factorization or
+implementing a memoization mechanism would arguably cause an additional speedup
+to the one already gained.
 
 Implementing a stateful process for finding prime numbers to avoid redundant
 computations is left as an exercise to the reader. Applying concurrency is not
@@ -994,12 +996,12 @@ enough; one has to apply it at the proper place and in the right way.
 
 # Sources and Links
 
-- [Factorizer](https://github.com/patrickbucher/factorizer) (Git Repository),
+- [github.com/patrickbucher/factorizer](https://github.com/patrickbucher/factorizer)
   containing both the executable code and this article
 - Saša Jurić: _Elixir in Action_ (Second Edition), Manning 2019, ISBN-13: 9781617295027.
   This article describes an extended example for the mechanisms being explained
-  in the chapters 5 and 6 in this instructive book. (Its third edition will be
-  released soon.)
+  in the chapters 5 and 6 of this very instructive book. (Its third edition will
+  be released soon.)
 
 When referring to "Elixir's concurrency features", as done many times in this
 text, most of the credit goes to Erlang/OTP. Credit for providing a convenient
