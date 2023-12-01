@@ -4,7 +4,7 @@ defmodule PrimeFactors do
     next(n, primes, [])
   end
 
-  defp next(1, [], acc) do
+  defp next(1, _, acc) do
     Enum.reverse(acc)
   end
 

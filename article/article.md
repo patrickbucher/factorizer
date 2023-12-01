@@ -229,7 +229,7 @@ There are two base cases to be covered:
 Those base cases are handled by the following function clauses:
 
 ```elixir
-defp next(1, [], acc) do
+defp next(1, _, acc) do
   Enum.reverse(acc)
 end
 
